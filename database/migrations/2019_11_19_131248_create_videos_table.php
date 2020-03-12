@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Classification;
+use App\Models\Video;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,7 +20,7 @@ class CreateVideosTable extends Migration
             $table->string('title');
             $table->text('description');
             $table->integer('duration');
-            $table->unsignedSmallInteger('classification')->default(1);
+            $table->enum('classification', Video::CLASSIFICATION);
             $table->date('release_at');
             $table->string('video_file')->nullable();
             $table->string('banner_file')->nullable();

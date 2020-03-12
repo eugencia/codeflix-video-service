@@ -17,4 +17,4 @@ use Illuminate\Support\Facades\Route;
 Route::apiResource('categories', 'CategoryController');
 Route::apiResource('genres', 'GenreController');
 Route::apiResource('cast-members', 'CastMemberController')->parameters(['cast-members' => 'castMember']);
-// Route::apiResource('videos', 'VideoController');
+Route::apiResource('videos', 'VideoController');

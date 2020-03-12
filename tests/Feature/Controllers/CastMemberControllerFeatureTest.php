@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Http;
 
-use App\Enums\CastMemberType;
 use App\Models\CastMember;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
@@ -59,11 +58,13 @@ class CastMemberControllerFeatureTest extends TestCase
      *
      * @return void
      */
-    public function testInvalidateDataIn()
+    public function testInvalidateDataRole()
     {
-        $data = ['role' => -9];
+        $data = $this->getFakeData(['role' => -9]);
 
-        $this->assertFieldsValidationInCreating($data, 'in');
+        $response = $this->json('POST', route('cast-members.store'), $data);
+
+        $response->assertJsonValidationErrors(['role']);
     }
 
     /**
@@ -130,12 +131,18 @@ class CastMemberControllerFeatureTest extends TestCase
      */
     public function testStoreCastMemberWithSomeRole()
     {
-        $role = rand(1, 3);
+        $roleActor = CastMember::ACTOR;
 
-        $data = $this->getFakeData(['role' => $role]);
+        $data = $this->getFakeData(['role' => $roleActor]);
+        $attributesTestOnDatabase = ['role' => $roleActor, 'deleted_at' => null];
+        $attributesTestOnJsonResponse = ['name' => $data['name'], 'deleted_at' => null];
 
-        $attributesTestOnDatabase = ['role' => $role, 'deleted_at' => null];
+        $this->assertFieldsOnCreate($data, $attributesTestOnDatabase, $attributesTestOnJsonResponse);
 
+        $roleDirector = CastMember::DIRECTOR;
+
+        $data = $this->getFakeData(['role' => $roleDirector]);
+        $attributesTestOnDatabase = ['role' => $roleDirector, 'deleted_at' => null];
         $attributesTestOnJsonResponse = ['name' => $data['name'], 'deleted_at' => null];
 
         $this->assertFieldsOnCreate($data, $attributesTestOnDatabase, $attributesTestOnJsonResponse);
@@ -162,7 +169,7 @@ class CastMemberControllerFeatureTest extends TestCase
      */
     public function testUpdateCastMemberRoleForSomeRole()
     {
-        $newRole = rand(1,3);
+        $newRole = CastMember::ACTOR;
 
         $newData = $this->getFakeData(['role' => $newRole]);
 
@@ -248,9 +255,11 @@ class CastMemberControllerFeatureTest extends TestCase
 
     private function getFakeData(array $data = [])
     {
+        $arr = [CastMember::ACTOR, CastMember::DIRECTOR];
+
         return [
             'name' => $data['name'] ?? $this->faker()->name,
-            'role' => $data['role'] ?? rand(1, 3),
+            'role' => $data['role'] ?? $arr[array_rand($arr)],
         ];
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
 use App\Traits\Uuid;
+use BenSampo\Enum\Traits\CastsEnums;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -11,8 +13,7 @@ class CastMember extends Model
     use Uuid, SoftDeletes;
 
     const ACTOR = 1;
-    const ACTRIZ = 2;
-    const DIRECTOR = 3;
+    const DIRECTOR = 2;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -20,9 +21,5 @@ class CastMember extends Model
     protected $fillable = [
         'name',
         'role'
-    ];
-
-    protected $casts = [
-        'role' => 'int',
     ];
 }

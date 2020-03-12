@@ -134,18 +134,23 @@ class GenreControllerFeatureTest extends TestCase
 
     public function testUpdate()
     {
+        $category = factory(Category::class)->create(['is_active' => true]);
+
         $data = $this->getFakeData();
 
         $newData = array_merge(
             $data,
             [
-                'name' => 'updated', 'is_active' => !$data['is_active']
+                'name' => 'updated', 'is_active' => !$data['is_active'],
+                'categories' => [$category->id]
             ]
         );
 
         $testData =  Arr::except($newData, 'categories') + ['deleted_at' => null];
 
-        $this->assertFieldsOnUpdate($newData, $testData, $testData);
+        $response = $this->assertFieldsOnUpdate($newData, $testData, $testData);
+
+        $this->assertGenreHasCategory($response->json('id'), $category->id);
     }
 
     public function testShow()
@@ -164,6 +169,39 @@ class GenreControllerFeatureTest extends TestCase
 
         $this->assertNull(Genre::find($this->genre->id));
         $this->assertNotNull(Genre::onlyTrashed()->find($this->genre->id));
+    }
+
+    public function testSyncCategories()
+    {
+        $categories = factory(Category::class, 3)
+            ->create(['is_active' => true])
+            ->pluck('id')
+            ->toArray();
+
+        /**
+         * Primeiro criar um gênero com alguma categoria
+         */
+        $data = ['name' => 'Gênero', 'is_active' => true, 'categories' => [$categories[0]]];
+        $response = $this->json("POST", $this->routeStore(), $data);
+
+        $this->assertGenreHasCategory($response->json('id'), $categories[0]);
+
+        /**
+         * Testar minha sincronização ao atualizar
+         */
+        $data = ['name' => 'Gênero', 'is_active' => true, 'categories' => [$categories[1], $categories[2]]];
+        $response = $this->json("PUT", route('genres.update', $response->json('id')), $data);
+
+        $this->assertDatabaseMissing('category_genre', ['genre_id' => $response->json('id'), 'category_id' => $categories[0]]);
+        $this->assertGenreHasCategory($response->json('id'), $categories[1]);
+        $this->assertGenreHasCategory($response->json('id'), $categories[2]);
+
+        $data = ['name' => 'Gênero', 'is_active' => true, 'categories' => [$categories[0], $categories[2]]];
+        $response = $this->json("PUT", route('genres.update', $response->json('id')), $data);
+
+        $this->assertDatabaseMissing('category_genre', ['genre_id' => $response->json('id'), 'category_id' => $categories[1]]);
+        $this->assertGenreHasCategory($response->json('id'), $categories[0]);
+        $this->assertGenreHasCategory($response->json('id'), $categories[2]);
     }
 
     public function testRollbackStore()

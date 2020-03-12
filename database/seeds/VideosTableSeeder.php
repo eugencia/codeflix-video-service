@@ -20,7 +20,7 @@ class VideosTableSeeder extends Seeder
 
         Model::reguard();
 
-        factory(Video::class, 30)->make()
+        factory(Video::class, 40)->make()
             ->each(function ($video) {
 
                 Video::create(
@@ -43,12 +43,6 @@ class VideosTableSeeder extends Seeder
         File::deleteDirectory($directory);
     }
 
-    // private function makeImage(){
-    //     return new UploadedFile(storage_path())
-    // }
-    private function makeFile()
-    {
-    }
     private function makeRelations()
     {
         $genresId = [];

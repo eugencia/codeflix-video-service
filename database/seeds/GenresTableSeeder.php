@@ -13,16 +13,18 @@ class GenresTableSeeder extends Seeder
      */
     public function run()
     {
-        factory(Genre::class, 5)->create()->each(function ($genre) {
 
-            $qtd = rand(1, 3);
 
-            $categoriesActive = Category::where('is_active', true)
-                                    ->inRandomOrder()
-                                    ->limit($qtd)
-                                    ->get();
+        factory(Genre::class, 15)
+            ->create()
+            ->each(function ($genre) {
 
-            $genre->categories()->sync($categoriesActive);
-        });
+                $categoriesActive = Category::where('is_active', true)
+                    ->inRandomOrder()
+                    ->limit(rand(1, 3))
+                    ->get();
+
+                $genre->categories()->sync($categoriesActive);
+            });
     }
 }

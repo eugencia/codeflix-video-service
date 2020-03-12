@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\VideoRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Video;
+use App\Rules\GenreHasCategories;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class VideoController extends Controller
 {
@@ -20,6 +20,15 @@ class VideoController extends Controller
         return VideoRequest::class;
     }
 
+    protected function getRules()
+    {
+        $videoRequest = $this->request();
+
+        $videoRequest = new $videoRequest;
+
+        return $videoRequest->rules();
+    }
+
     /**
      * Store a newly created resource in storage.
      *
@@ -28,29 +37,14 @@ class VideoController extends Controller
      */
     public function store(Request $request)
     {
-        try {
-            DB::beginTransaction();
+        $this->addRule($request);
 
-            $formRequest = new VideoRequest;
+        $data = $this->validate($request, $this->getRules());
 
-            $data = $this->validate($request, $formRequest->rules());
+        $video = Video::create($data);
+        $video->refresh();
 
-            $video = Video::create($data);
-
-            $this->syncRelations($video, $data);
-
-            $video->refresh();
-
-            DB::commit();
-
-            return $video;
-        } catch (\Throwable $th) {
-            if (isset($video)) {
-                // $video->remove($fileFields);
-            }
-            DB::rollBack();
-            throw $th;
-        }
+        return $video;
     }
 
     /**
@@ -62,37 +56,21 @@ class VideoController extends Controller
      */
     public function update(Request $request, $video)
     {
-        try {
-            DB::beginTransaction();
+        $this->addRule($request);
 
-            $formRequest = new VideoRequest;
+        $data = $this->validate($request, $this->getRules());
 
-            $data = $this->validate($request, $formRequest->rules());
+        $video = $this->getModelBy($video);
+        $video->update($data);
+        $video->refresh();
 
-            $video = $this->getModelBy($video);
-
-            $video->update($data);
-
-            $this->syncRelations($video, $data);
-
-            $video->refresh();
-
-            DB::commit();
-
-            return $video;
-        } catch (\Throwable $th) {
-            if (isset($video)) {
-                // $video->remove($fileFields);
-            }
-            DB::rollBack();
-            throw $th;
-        }
+        return $video;
     }
 
-    protected function syncRelations(Video $video, array $relations = []): void
+    protected function addRule(Request $request)
     {
-        $video->categories()->sync($relations['categories']);
+        $categories = is_array($request->get('categories')) ? $request->get('categories') : [];
 
-        $video->genres()->sync($relations['genres']);
+        $this->getRules()['genres'][] = new GenreHasCategories($categories);
     }
 }

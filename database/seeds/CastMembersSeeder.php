@@ -12,6 +12,6 @@ class CastMembersSeeder extends Seeder
      */
     public function run()
     {
-        factory(CastMember::class, 5)->create();
+        factory(CastMember::class, 50)->create();
     }
 }

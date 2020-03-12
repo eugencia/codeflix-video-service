@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\CastMemberType;
+use App\Enums\Role;
 use App\Models\CastMember;
 use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Foundation\Http\FormRequest;
@@ -28,11 +29,7 @@ class CastMemberRequest extends FormRequest
     {
         return [
             'name' => 'required|max:255',
-            'role' => 'required|in:' . implode(',', [
-                CastMember::ACTOR,
-                CastMember::ACTRIZ,
-                CastMember::DIRECTOR
-            ])
+            'role' => "required|in:" . implode(',', [CastMember::ACTOR, CastMember::DIRECTOR])
         ];
     }
 }

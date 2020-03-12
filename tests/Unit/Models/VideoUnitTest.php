@@ -17,8 +17,8 @@ class VideoUnitTest extends TestCase
     {
         $traits = [
             Uuid::class,
+            Uploader::class,
             SoftDeletes::class,
-            Uploader::class
         ];
 
         $this->assertTheUseOfTraits($traits, Video::class);

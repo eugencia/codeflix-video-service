@@ -11,14 +11,12 @@ use Illuminate\Support\Facades\DB;
 
 class Video extends Model
 {
-    use Uuid, SoftDeletes, Uploader;
+    use Uuid, Uploader, SoftDeletes;
+
+    const CLASSIFICATION = ['L', 10, 12, 14, 16, 18];
 
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $with = [
-        'genres',
-        'categories'
-    ];
 
     protected $fillable = [
         'title',
@@ -40,126 +38,132 @@ class Video extends Model
     ];
 
     protected $casts = [
-        'classification' => 'int',
         'duration' => 'int',
         'release_at' => 'date_format:Y-m-d'
     ];
 
-    // protected $enumCasts = [
-    //     'classification' => Classification::class
-    // ];
+    // public function getVideoFileUrlAttribute()
+    // {
+    //     if ($this->video_file)
+    //         return $this->video_file;
 
-    public function getVideoFileUrlAttribute()
+    //     return null;
+    // }
+
+    // public function getBannerFileUrlAttribute()
+    // {
+    //     if ($this->banner_file)
+    //         return $this->banner_file;
+
+    //     return null;
+    // }
+
+    // public function getTrailerFileUrlAttribute()
+    // {
+    //     if ($this->trailer_file)
+    //         return $this->trailer_file;
+
+    //     return null;
+    // }
+
+    // public function getThumbanilFileUrlAttribute()
+    // {
+    //     if ($this->thumbnail_file)
+    //         return $this->thumbnail_file;
+
+    //     return null;
+    // }
+
+    public static function create(array $attributes = [])
     {
-        if ($this->video_file)
-            return $this->video_file;
+        // $fileFields = self::extractFileFields($attributes);
 
-        return null;
+        try {
+            DB::beginTransaction();
+
+            $video = static::query()->create($attributes);
+
+            static::syncRelations($video, $attributes);
+
+            // $video->upload($fileFields);
+
+            DB::commit();
+
+            return $video;
+        } catch (\Throwable $th) {
+            if (isset($video)) {
+                // $video->remove($fileFields);
+            }
+            DB::rollBack();
+            throw $th;
+        }
     }
 
-    public function getBannerFileUrlAttribute()
+    public function update(array $attributes = [], array $options = [])
     {
-        if ($this->banner_file)
-            return $this->banner_file;
+        // $fileFields = self::extractFileFields($attributes);
 
-        return null;
+        try {
+            DB::beginTransaction();
+
+            $saved = parent::update($attributes, $options);
+
+            static::syncRelations($this, $attributes);
+
+            // if ($saved) {
+            //     $this->upload($fileFields);
+            // }
+
+            DB::commit();
+
+            // if ($saved && count($fileFields)) {
+            //     $this->removeOldFiles();
+            // }
+
+            return $saved;
+        } catch (\Throwable $th) {
+            // $this->remove($fileFields);
+            DB::rollBack();
+            throw $th;
+        }
     }
 
-    public function getTrailerFileUrlAttribute()
+    /**
+     * Sincroniza os relacionamentos com o vídeo
+     *
+     * @param Video $video
+     * @param array $relations
+     * @return void
+     */
+    public static function syncRelations(Video $video, array $relations = []): void
     {
-        if ($this->trailer_file)
-            return $this->trailer_file;
+        if(isset($relations['categories']))
+            $video->categories()->sync($relations['categories']);
 
-        return null;
+        if(isset($relations['genres']))
+            $video->genres()->sync($relations['genres']);
+
     }
 
-    public function getThumbanilFileUrlAttribute()
-    {
-        if ($this->thumbnail_file)
-            return $this->thumbnail_file;
-
-        return null;
-    }
-
+    /**
+     * Retorna todos as categorias do vídeo, inclusive as excluídas
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
     public function categories()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsToMany(Category::class)->withTrashed();
     }
 
+    /**
+     * Retorna todos os gêneros do vídeo, inclusive os excluídos
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
     public function genres()
     {
-        return $this->belongsToMany(Genre::class);
+        return $this->belongsToMany(Genre::class)->withTrashed();
     }
-
-    // public static function create(array $attributes = [])
-    // {
-    //     $fileFields = self::extractFileFields($attributes);
-
-    //     try {
-    //         DB::beginTransaction();
-
-    //         $video = static::query()->create($attributes);
-
-    //         $video->syncRelations($attributes);
-
-    //         // $video->upload($fileFields);
-
-    //         DB::commit();
-
-    //         return $video;
-    //     } catch (\Throwable $th) {
-    //         if (isset($video)) {
-    //             // $video->remove($fileFields);
-    //         }
-    //         DB::rollBack();
-    //         throw $th;
-    //     }
-    // }
-
-    // public function update(array $attributes = [], array $options = [])
-    // {
-    //     // $fileFields = self::extractFileFields($attributes);
-
-    //     try {
-    //         DB::beginTransaction();
-
-    //         $saved = parent::update($attributes, $options);
-
-    //         $this->syncRelations($attributes);
-
-    //         // if ($saved) {
-    //         //     $this->upload($fileFields);
-    //         // }
-
-    //         DB::commit();
-
-    //         // if ($saved && count($fileFields)) {
-    //         //     $this->removeOldFiles();
-    //         // }
-
-    //         return $saved;
-    //     } catch (\Throwable $th) {
-    //         // $this->remove($fileFields);
-    //         DB::rollBack();
-    //         throw $th;
-    //     }
-    // }
-
-    // private function syncRelations(array $relations = []): void
-    // {
-    //     $relations = collect([
-    //         'categories' => $relations['categories'] ?? [],
-    //         'genres' => $relations['genres'] ?? [],
-    //     ]);
-
-    //     if (!empty($relations)) {
-    //         $relations->each(function ($values, $key) {
-    //             $this->$key()->sync($values);
-    //         });
-    //     }
-
-    //     $this->fresh();
-    // }
 
     protected function path()
     {

@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\CastMemberType;
+use App\Models\CastMember;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,7 +17,7 @@ class CreateCastMembersTable extends Migration
         Schema::create('cast_members', function (Blueprint $table) {
             $table->uuid('id')->primary()->unique()->index();
             $table->string('name');
-            $table->enum('role', [1, 2, 3]);
+            $table->enum('role', [CastMember::ACTOR, CastMember::DIRECTOR]);
             $table->timestamps();
             $table->softDeletes();
         });

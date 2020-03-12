@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\Classification;
 use App\Enums\Size;
+use App\Models\Video;
 use App\Rules\GenreHasCategories;
 use BenSampo\Enum\Rules\EnumValue;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,12 +31,12 @@ class VideoRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'duration' => 'required|numeric|min:0',
+            'duration' => 'required|integer|min:0',
             'classification' => [
                 'required',
-                new EnumValue(Classification::class, false)
+                'in:'.implode(',', Video::CLASSIFICATION)
             ],
-            'release_at' => 'required|date',
+            'release_at' => 'required|date|date_format:Y-m-d',
             'categories' =>  [
                 'required',
                 'array',
@@ -45,7 +46,6 @@ class VideoRequest extends FormRequest
                 'required',
                 'array',
                 'exists:genres,id,is_active,1,deleted_at,NULL',
-                // new GenreHasCategories($this->categories)
             ],
             // 'video_file' => 'file|mimetypes:video/mp4|max:'. Size::VIDEO,
             // 'banner_file' => 'image|max:'. Size::BANNER,

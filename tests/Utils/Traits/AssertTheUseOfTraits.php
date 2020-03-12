@@ -6,7 +6,7 @@ trait AssertTheUseOfTraits
 {
 
     /**
-     * Undocumented function
+     * Valida a utilização de traits
      *
      * @param string|array $traitClass
      * @param string $modelClass
