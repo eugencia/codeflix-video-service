@@ -7,15 +7,26 @@ use App\Models\Genre;
 use App\Models\Video;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\TestCase;
 
 class VideoModelFeatureTest extends TestCase
 {
     use DatabaseMigrations, WithFaker;
+
+    /**
+     * @var Video
+     */
+    private $video;
+
+    protected function setUp(): void
+    {
+        $this->video = new Video;
+    }
 
     public function testCreateWithoutRelations()
     {
@@ -33,6 +44,38 @@ class VideoModelFeatureTest extends TestCase
         $this->assertDatabaseHas('videos', Arr::except($data, ['categories', 'genres']));
         $this->assertDatabaseHas('category_video', ['video_id' => $video->id, 'category_id' => $data['categories'][0]]);
         $this->assertDatabaseHas('genre_video', ['video_id' => $video->id, 'genre_id' => $data['genres'][0]]);
+    }
+
+    public function testCreateWithFiles()
+    {
+        $data = $this->getFakeData();
+
+        $fileFields = [];
+
+        foreach (Video::$fileFields as $fileField) {
+            $fileFields[$fileField] = $fileField . ".test ";
+        }
+
+        $video = Video::create($data + $fileFields);
+
+        $this->assertDatabaseHas('videos', $data);
+    }
+
+    public function testUpdateWithFiles()
+    {
+        $video = factory(Video::class)->create();
+
+        $data = $this->getFakeData();
+
+        $fileFields = [];
+
+        foreach (Video::$fileFields as $fileField) {
+            $fileFields[$fileField] = $fileField . ".test ";
+        }
+
+        $video->update($data + $fileFields);
+
+        $this->assertDatabaseHas('videos', $data + $fileFields);
     }
 
     public function testUpdateWithoutRelations()
@@ -106,6 +149,9 @@ class VideoModelFeatureTest extends TestCase
         $firstRelations = $this->getFakeRelations();
         $secondRelations = $this->getFakeRelations();
 
+        /**
+         * @var Video $video
+         */
         $video = Video::create($this->getFakeData());
 
         /**Sincroniza com as primeiras relações */
@@ -117,12 +163,12 @@ class VideoModelFeatureTest extends TestCase
         /**Atualizar as relações do video com outras */
         Video::syncRelations($video, $secondRelations);
         /**Valida a sincronização com as outras */
-        $this->assertDatabaseHas('category_video', ['video_id' => $video->id,'category_id' => $secondRelations['categories'][0]]);
-        $this->assertDatabaseHas('genre_video', ['video_id' => $video->id,'genre_id' => $secondRelations['genres'][0]]);
+        $this->assertDatabaseHas('category_video', ['video_id' => $video->id, 'category_id' => $secondRelations['categories'][0]]);
+        $this->assertDatabaseHas('genre_video', ['video_id' => $video->id, 'genre_id' => $secondRelations['genres'][0]]);
 
         /**Valida a dessincronização com as primeiras */
-        $this->assertDatabaseMissing('category_video', ['video_id' => $video->id,'category_id' => $firstRelations['categories'][0]]);
-        $this->assertDatabaseMissing('genre_video', ['video_id' => $video->id,'genre_id' => $firstRelations['genres'][0]]);
+        $this->assertDatabaseMissing('category_video', ['video_id' => $video->id, 'category_id' => $firstRelations['categories'][0]]);
+        $this->assertDatabaseMissing('genre_video', ['video_id' => $video->id, 'genre_id' => $firstRelations['genres'][0]]);
     }
 
     public function testRollbackCreate()
@@ -154,6 +200,41 @@ class VideoModelFeatureTest extends TestCase
         }
 
         $this->assertTrue($hasError);
+    }
+
+    public function testDeleteOldFiles()
+    {
+        Storage::fake();
+
+        $fakeFiles = $this->getFakeFiles();
+
+        $this->video->uploadFiles($fakeFiles);
+
+        // $this->video->removeOldFiles(); // Return 0
+        // $this->assertCount(count($fakeFiles), Storage::allFiles());
+
+        // $this->video->oldFiles = [
+        //     $fakeFiles[0]->hashName()
+        // ];
+
+        // $this->video->removeOldFiles(); // Return 0
+        // $this->assertCount(count($fakeFiles) - 1, Storage::allFiles());
+
+        // Storage::assertMissing("{$this->video->path()}/{$fakeFiles[0]->hashName()}");
+
+        // Storage::assertExists("{$this->video->path()}/{$fakeFiles[1]->hashName()}");
+        // Storage::assertExists("{$this->video->path()}/{$fakeFiles[2]->hashName()}");
+        // Storage::assertExists("{$this->video->path()}/{$fakeFiles[3]->hashName()}");
+    }
+
+    private function getFakeFiles()
+    {
+        return [
+            'video' => UploadedFile::fake()->create('video.mp4'),
+            'banner' => UploadedFile::fake()->image('banner.jpg'),
+            'trailer' => UploadedFile::fake()->create('trailer.mp4'),
+            'thumbnail' => UploadedFile::fake()->image('thumbnail.jpg'),
+        ];
     }
 
     private function getFakeData(array $newData = [])

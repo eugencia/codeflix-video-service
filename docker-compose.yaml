@@ -14,7 +14,7 @@ services:
       - DB_PORT=3306
       - APP_ENV=local
       - DB_USERNAME=root
-      - FILESYSTEM_DRIVER=local
+      - FILESYSTEM_DRIVER=videos
       - GOOGLE_CLOUD_PROJECT_ID=code-flix
       - GOOGLE_CLOUD_KEY_FILE=service-account-storage.json
       - GOOGLE_CLOUD_STORAGE_BUCKET=video-flix

@@ -7,7 +7,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
-class VideosTableSeeder extends Seeder
+class VideoSeeder extends Seeder
 {
     /**
      * Run the database seeds.

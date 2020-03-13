@@ -22,10 +22,10 @@ class CreateVideosTable extends Migration
             $table->integer('duration');
             $table->enum('classification', Video::CLASSIFICATION);
             $table->date('release_at');
-            $table->string('video_file')->nullable();
-            $table->string('banner_file')->nullable();
-            $table->string('trailer_file')->nullable();
-            $table->string('thumbnail_file')->nullable();
+            $table->string('video')->nullable();
+            $table->string('banner')->nullable();
+            $table->string('trailer')->nullable();
+            $table->string('thumbnail')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

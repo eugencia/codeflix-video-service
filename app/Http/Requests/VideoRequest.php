@@ -47,10 +47,10 @@ class VideoRequest extends FormRequest
                 'array',
                 'exists:genres,id,is_active,1,deleted_at,NULL',
             ],
-            // 'video_file' => 'file|mimetypes:video/mp4|max:'. Size::VIDEO,
-            // 'banner_file' => 'image|max:'. Size::BANNER,
-            // 'trailer_file' => 'file|mimetypes:video/mp4|max:'. Size::TRAILER,
-            // 'thumbnail_file' => 'image|max:'. Size::THUMBNAIL
+            'video' => 'file|mimetypes:video/mp4|max:12',//. Size::VIDEO,
+            'banner' => 'image|max:12',//. Size::BANNER,
+            'trailer' => 'file|mimetypes:video/mp4|max:12',//. Size::TRAILER,
+            'thumbnail' => 'image|max:12'//. Size::THUMBNAIL
         ];
     }
 }

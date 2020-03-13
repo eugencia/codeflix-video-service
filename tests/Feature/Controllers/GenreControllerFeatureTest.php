@@ -13,12 +13,11 @@ use Illuminate\Support\Arr;
 use Mockery;
 use Tests\TestCase;
 use Tests\Utils\Exceptions\TestException;
-use Tests\Utils\Traits\AssertFieldsSaves;
-use Tests\Utils\Traits\AssertFieldsValidation;
+use Tests\Utils\Traits\AssertFields;
 
 class GenreControllerFeatureTest extends TestCase
 {
-    use DatabaseMigrations, WithFaker, AssertFieldsValidation, AssertFieldsSaves;
+    use DatabaseMigrations, WithFaker, AssertFields;
 
     /**
      * @var Genre $genre

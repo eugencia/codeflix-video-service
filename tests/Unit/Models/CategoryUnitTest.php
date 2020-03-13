@@ -6,11 +6,11 @@ use App\Models\Category;
 use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use PHPUnit\Framework\TestCase;
-use Tests\Utils\Traits\AssertTheUseOfTraits;
+use Tests\Utils\Traits\AssertTraits;
 
 class CategoryUnitTest extends TestCase
 {
-    use AssertTheUseOfTraits;
+    use AssertTraits;
 
     public function testIfUseDefaultTraits()
     {
@@ -19,6 +19,6 @@ class CategoryUnitTest extends TestCase
             SoftDeletes::class
         ];
 
-        $this->assertTheUseOfTraits($traits, Category::class);
+        $this->assertTraitsUse($traits, Category::class);
     }
 }

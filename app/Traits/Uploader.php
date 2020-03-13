@@ -12,8 +12,18 @@ use Illuminate\Support\Facades\Storage;
  */
 trait Uploader
 {
+    /**
+     * Arrat de arquivos antigos
+     *
+     * @var array
+     */
     public $oldFiles = [];
 
+    /**
+     * Set the path to save files
+     *
+     * @return string
+     */
     protected abstract function path();
 
     /**
@@ -24,10 +34,14 @@ trait Uploader
     {
         static::updating(function (Model $model) {
 
-            $allFieldsChanged = array_keys($model->getDirty());
-            $allFileFieldsChanged = array_intersect($allFieldsChanged, self::$fileFields);
+            /** Todos os campos que foram modificados */
+            $fieldsUpdated = array_keys($model->getDirty());
 
-            $fileFieldsToBeUpdated = Arr::where($allFileFieldsChanged, function ($fileField) use ($model) {
+            /** Todos os campos de arquivos que foram modificados*/
+            $filefieldsUpdated = array_intersect($fieldsUpdated, self::$fileFields);
+
+            /** Filtrar os campos de arquivos que foram atualizados e que tenham algum nome válido */
+            $fileFieldsToBeUpdated = Arr::where($filefieldsUpdated, function ($fileField) use ($model) {
                 return $model->getOriginal($fileField);
             });
 
@@ -38,47 +52,61 @@ trait Uploader
     }
 
     /**
-     * Upload file
+     * Upload a unique file
      *
-     * @param UploadedFile|array $data
-     *
-     * @return void
-     */
-    public function upload($data)
-    {
-        if (is_array($data)) {
-            foreach ($data as $file) {
-                $this->saveOnStorage($file);
-            }
-
-            return;
-        }
-
-        $this->saveOnStorage($data);
-    }
-
-    /**
-     * Upload file
-     *
-     * @param array|UploadedFile $data
+     * @param UploadedFile $file
      *
      * @return void
      */
-    public function remove($data)
+    public function uploadFile(UploadedFile $file)
     {
-        if (is_array($data)) {
-            foreach ($data as $file) {
-                $this->removeOnStorage($file);
-            }
-
-            return;
-        }
-
-        $this->removeOnStorage($data);
+        $file->store($this->path());
     }
 
     /**
-     * Remove old files
+     * Upload a multiples files
+     *
+     * @param UploadedFile[] $files
+     *
+     * @return void
+     */
+    public function uploadFiles(array $files)
+    {
+        foreach ($files as $file) {
+            $this->uploadFile($file);
+        }
+    }
+
+    /**
+     * Remove a unique file
+     *
+     * @param UploadedFile|string $file
+     *
+     * @return void
+     */
+    public function removeFile($file)
+    {
+        $fileName = $file instanceof UploadedFile ? $file->hashName() : $file;
+
+        Storage::delete("{$this->path()}/{$fileName}");
+    }
+
+    /**
+     * Remove a multiples files
+     *
+     * @param UploadedFile[] $files
+     *
+     * @return void
+     */
+    public function removeFiles(array $files)
+    {
+        foreach ($files as $file) {
+            $this->removeFile($file);
+        }
+    }
+
+    /**
+     * Exclui arquivos antigos que foram atualizados
      *
      * @param UploadedFile[] $data
      *
@@ -86,76 +114,57 @@ trait Uploader
      */
     public function removeOldFiles()
     {
-        // dump($this->oldFiles);
-        
-        $this->remove($this->oldFiles);
+        $this->removeFiles($this->oldFiles);
     }
 
     /**
      * Retorna o link do arquivo
-     * 
+     *
      * @params  UploadedFile|string $file
-     * 
+     *
      * @return string
      */
-    public function getUrl($file)
-    {
-        return Storage::url($this->getPath($file));
-    }
+    // public function getUrl($file)
+    // {
+    //     return Storage::url($this->getPath($file));
+    // }
 
     /**
      * Retorna o caminho do arquivo
-     * 
+     *
      * @params  UploadedFile|string $file
-     * 
+     *
      * @return string
      */
-    public function getPath($file)
-    {
-        if ($file instanceof UploadedFile) {
-            $file = $file->hashName();
-        }
+    // public function getPath($file)
+    // {
+    //     if ($file instanceof UploadedFile) {
+    //         $file = $file->hashName();
+    //     }
 
-        return "{$this->path()}/$file";
-    }
+    //     return "{$this->path()}/$file";
+    // }
 
-    public static function extractFileFields(array &$attributes = [])
+    /**
+     * Extract attributes files to upload
+     *
+     * @param array $attributes
+     * @var array $uploadedFiles
+     * @return array
+     */
+    public static function extractFiles(array &$attributes = [])
     {
-        $files = [];
+        $uploadedFiles = [];
 
         foreach (self::$fileFields as $fileField) {
 
             if (isset($attributes[$fileField]) && $attributes[$fileField] instanceof UploadedFile) {
-                $files[] = $attributes[$fileField];
+                $uploadedFiles[] = $attributes[$fileField];
 
                 $attributes[$fileField] = $attributes[$fileField]->hashName();
             }
         }
 
-        return $files;
-    }
-
-    /**
-     * Save a file in storage
-     *
-     * @param UploadedFile $file
-     * @return void
-     */
-    private function saveOnStorage(UploadedFile $file)
-    {
-        $file->store($this->path());
-    }
-
-    /**
-     * Remove a file in storage
-     *
-     * @param string|UploadedFile $file
-     * @return void
-     */
-    private function removeOnStorage($file)
-    {
-        $fileName = $file instanceof UploadedFile ? $file->hashName() : $file;
-
-        Storage::delete("{$this->path()}/{$fileName}");
+        return $uploadedFiles;
     }
 }

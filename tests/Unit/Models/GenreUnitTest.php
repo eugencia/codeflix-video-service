@@ -6,11 +6,11 @@ use App\Models\Genre;
 use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Tests\TestCase;
-use Tests\Utils\Traits\AssertTheUseOfTraits;
+use Tests\Utils\Traits\AssertTraits;
 
 class GenreUnitTest extends TestCase
 {
-    use AssertTheUseOfTraits;
+    use AssertTraits;
 
     public function testIfUseDefaultTraits()
     {
@@ -19,6 +19,6 @@ class GenreUnitTest extends TestCase
             SoftDeletes::class
         ];
 
-        $this->assertTheUseOfTraits($traits, Genre::class);
+        $this->assertTraitsUse($traits, Genre::class);
     }
 }

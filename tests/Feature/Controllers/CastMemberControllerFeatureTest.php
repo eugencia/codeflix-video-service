@@ -6,12 +6,11 @@ use App\Models\CastMember;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
-use Tests\Utils\Traits\AssertFieldsSaves;
-use Tests\Utils\Traits\AssertFieldsValidation;
+use Tests\Utils\Traits\AssertFields;
 
 class CastMemberControllerFeatureTest extends TestCase
 {
-    use DatabaseMigrations, WithFaker, AssertFieldsValidation, AssertFieldsSaves;
+    use DatabaseMigrations, WithFaker, AssertFields;
 
     /**
      * @var CastMember $castMember

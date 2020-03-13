@@ -2,25 +2,29 @@
 
 namespace Tests\Feature\Http;
 
-use App\Enums\Classification;
-use App\Http\Controllers\VideoController;
 use App\Models\Category;
 use App\Models\Genre;
 use App\Models\Video;
+use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
-use Mockery;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 use Tests\Utils\Exceptions\TestException;
 use Tests\Utils\Traits\AssertFieldsSaves;
-use Tests\Utils\Traits\AssertFieldsValidation;
+use Tests\Utils\Traits\AssertFields;
+use Tests\Utils\Traits\AssertFiles;
 
 class VideoControllerFeatureTest extends TestCase
 {
-    use DatabaseMigrations, WithFaker, AssertFieldsValidation, AssertFieldsSaves;
+    use DatabaseMigrations,
+        WithFaker,
+        AssertFiles,
+        AssertFields;
 
     /**
      * @var Video $video
@@ -51,6 +55,11 @@ class VideoControllerFeatureTest extends TestCase
 
         $this->assertFieldsValidationInCreating($data, 'required');
         $this->assertFieldsValidationInUpdating($data, 'required');
+    }
+
+    public function testInvalidateFileFields()
+    {
+        $this->assertFileInvalidation('video', 'mp4', 12, 'mimetypes', ['values' => 'video/mp4']);
     }
 
     public function testInvalidateMaxSizeFields()
@@ -165,7 +174,7 @@ class VideoControllerFeatureTest extends TestCase
         $this->assertNotNull(Video::onlyTrashed()->find($this->video->id));
     }
 
-    public function testSave()
+    public function testSaveWithoutFiles()
     {
         $dataFake = $this->getFakeData() + $this->getFakeRelations();
 
@@ -233,80 +242,74 @@ class VideoControllerFeatureTest extends TestCase
         );
     }
 
-    // public function testRollbackStore()
-    // {
-    //     // Habilitar inclusive os métodos protegidos
-    //     $videoController = Mockery::mock(VideoController::class)
-    //         ->makePartial()
-    //         ->shouldAllowMockingProtectedMethods();
+    public function testStoreWithFiles()
+    {
+        Storage::fake();
 
-    //     // Ignorar o método validate dos dados
-    //     $videoController->shouldReceive('validate')
-    //         ->withAnyArgs()
-    //         ->andReturn($this->getFakeData());
+        $fakeData = $this->getFakeData();
+        $fakeFiles = $this->getFakeFiles();
+        $fakeRelations = $this->getFakeRelations();
 
-    //     // Lançar exceção quando o método syncRelations for chamada
-    //     $videoController->shouldReceive('syncRelations')
-    //         ->once()
-    //         ->andThrow(new TestException);
+        $data = $fakeData + $fakeFiles + $fakeRelations;
 
-    //     $request = Mockery::mock(Request::class);
+        $response = $this->json("POST", $this->routeStore(), $data);
 
-    //     $request->shouldReceive('get')
-    //         ->withAnyArgs()
-    //         ->andReturnNull();
+        $response->assertCreated();
 
-    //     $hasError = false;
+        $this->assertFilesExists($response->json('id'), $fakeFiles);
+    }
 
-    //     try {
-    //         $videoController->store($request);
-    //     } catch (TestException $e) {
-    //         $this->assertCount(1, Video::all());
-    //         $hasError = true;
-    //     }
+    public function testRollbackInStoreWithFiles()
+    {
+        Storage::fake();
 
-    //     $this->assertTrue($hasError);
-    // }
+        Event::listen(TransactionCommitted::class, function () {
+            throw new TestException;
+        });
 
-    // public function testRollbackUpdate()
-    // {
-    //     // Habilitar inclusive os métodos protegidos
-    //     $videoController = Mockery::mock(VideoController::class)
-    //         ->makePartial()
-    //         ->shouldAllowMockingProtectedMethods();
+        $hasError = false;
 
-    //     //Inabilitar o getModelBy
-    //     $videoController->shouldReceive('getModelBy')
-    //         ->withAnyArgs()
-    //         ->andReturn($this->video);
+        try {
+            Video::create(
+                $this->getFakeData() +
+                $this->getFakeFiles() +
+                $this->getFakeRelations());
+        } catch (\Throwable $th) {
+            //throw $th;
 
-    //     // Ignorar o método validate dos dados
-    //     $videoController->shouldReceive('validate')
-    //         ->withAnyArgs()
-    //         ->andReturn($this->getFakeData());
+            $this->assertCount(0, Storage::allFiles());
+            $hasError = true;
+        }
 
-    //     // Lançar exceção quando o método syncRelations for chamada
-    //     $videoController->shouldReceive('syncRelations')
-    //         ->once()
-    //         ->andThrow(new TestException);
+        $this->assertTrue($hasError);
+    }
 
-    //     $request = Mockery::mock(Request::class);
+    public function testUpdateWithFiles()
+    {
+        Storage::fake();
 
-    //     $request->shouldReceive('get')
-    //         ->withAnyArgs()
-    //         ->andReturnNull();
+        $fakeData = $this->getFakeData();
+        $fakeFiles = $this->getFakeFiles();
+        $fakeRelations = $this->getFakeRelations();
 
-    //     $hasError = false;
+        $data = $fakeData + $fakeFiles + $fakeRelations;
 
-    //     try {
-    //         $videoController->update($request, 1);
-    //     } catch (TestException $e) {
-    //         $this->assertCount(1, Video::all());
-    //         $hasError = true;
-    //     }
+        $response = $this->json("PUT", $this->routeUpdate(), $data);
 
-    //     $this->assertTrue($hasError);
-    // }
+        $response->assertOk();
+
+        $this->assertFilesExists($response->json('id'), $fakeFiles);
+    }
+
+    private function getFakeFiles()
+    {
+        return [
+            'video' => UploadedFile::fake()->create('video.mp4'),
+            'banner' => UploadedFile::fake()->image('banner.jpg'),
+            'trailer' => UploadedFile::fake()->create('trailer.mp4'),
+            'thumbnail' => UploadedFile::fake()->image('thumbnail.jpg'),
+        ];
+    }
 
     private function getFakeData(array $newData = [])
     {

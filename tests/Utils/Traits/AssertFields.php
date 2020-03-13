@@ -3,12 +3,52 @@
 namespace Tests\Utils\Traits;
 
 use Exception;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Testing\TestResponse;
 
-trait AssertFieldsSaves
+trait AssertFields
 {
+    protected function assertFieldsValidationInCreating(
+        array $data,
+        string $rule,
+        array $params = []
+    ) {
+        $response = $this->json("POST", $this->routeStore(), $data);
+
+        $this->assertUnprocessableEntityField($response, array_keys($data), $rule, $params);
+    }
+
+    protected function assertFieldsValidationInUpdating(
+        array $data,
+        string $rule,
+        array $params = []
+    ) {
+        $response = $this->json("PUT", $this->routeUpdate(), $data);
+
+        $this->assertUnprocessableEntityField($response, array_keys($data), $rule, $params);
+    }
+
+    protected function assertUnprocessableEntityField(
+        TestResponse $response,
+        array $attributes = [],
+        string $rule,
+        array $ruleParams = []
+    ) {
+        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
+            ->assertJsonValidationErrors($attributes);
+
+        foreach ($attributes as $attribute) {
+            $field = str_replace('_', ' ', $attribute);
+            $response->assertJsonFragment([
+                Lang::get(
+                    "validation.{$rule}",
+                    ['attribute' => $field] + $ruleParams
+                )
+            ]);
+        }
+    }
+
     /**
      * Define a classe do model em teste
      *

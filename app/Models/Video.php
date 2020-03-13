@@ -24,17 +24,20 @@ class Video extends Model
         'classification',
         'duration',
         'release_at',
-        'video_file',
-        'banner_file',
-        'trailer_file',
-        'thumbnail_file'
+        'video',
+        'banner',
+        'trailer',
+        'thumbnail'
     ];
 
+    /**
+     * @var array $fileFields
+     */
     public static $fileFields = [
-        'video_file',
-        'banner_file',
-        'trailer_file',
-        'thumbnail_file'
+        'video',
+        'banner',
+        'trailer',
+        'thumbnail'
     ];
 
     protected $casts = [
@@ -74,9 +77,15 @@ class Video extends Model
     //     return null;
     // }
 
+    /**
+     * Create a vídeo
+     *
+     * @param array $attributes
+     * @return void
+     */
     public static function create(array $attributes = [])
     {
-        // $fileFields = self::extractFileFields($attributes);
+        $files = self::extractFiles($attributes);
 
         try {
             DB::beginTransaction();
@@ -85,23 +94,30 @@ class Video extends Model
 
             static::syncRelations($video, $attributes);
 
-            // $video->upload($fileFields);
+            $video->uploadFiles($files);
 
             DB::commit();
 
             return $video;
         } catch (\Throwable $th) {
             if (isset($video)) {
-                // $video->remove($fileFields);
+                $video->removeFiles($files);
             }
             DB::rollBack();
             throw $th;
         }
     }
 
+    /**
+     * Update a vídeo
+     *
+     * @param array $attributes
+     * @param array $options
+     * @return void
+     */
     public function update(array $attributes = [], array $options = [])
     {
-        // $fileFields = self::extractFileFields($attributes);
+        $files = self::extractFiles($attributes);
 
         try {
             DB::beginTransaction();
@@ -110,19 +126,19 @@ class Video extends Model
 
             static::syncRelations($this, $attributes);
 
-            // if ($saved) {
-            //     $this->upload($fileFields);
-            // }
+            if ($saved) {
+                $this->uploadFiles($files);
+            }
 
             DB::commit();
 
-            // if ($saved && count($fileFields)) {
+            // if ($saved && count($files)) {
             //     $this->removeOldFiles();
             // }
 
             return $saved;
         } catch (\Throwable $th) {
-            // $this->remove($fileFields);
+            // $this->remove($files);
             DB::rollBack();
             throw $th;
         }
@@ -137,12 +153,11 @@ class Video extends Model
      */
     public static function syncRelations(Video $video, array $relations = []): void
     {
-        if(isset($relations['categories']))
+        if (isset($relations['categories']))
             $video->categories()->sync($relations['categories']);
 
-        if(isset($relations['genres']))
+        if (isset($relations['genres']))
             $video->genres()->sync($relations['genres']);
-
     }
 
     /**
@@ -165,6 +180,11 @@ class Video extends Model
         return $this->belongsToMany(Genre::class)->withTrashed();
     }
 
+    /**
+     * Retorna o ID (uuid) do vídeo como nome do diretório do vídeo
+     *
+     * @return string
+     */
     protected function path()
     {
         return $this->id;

@@ -2,7 +2,7 @@
 
 namespace Tests\Utils\Traits;
 
-trait AssertTheUseOfTraits
+trait AssertTraits
 {
 
     /**
@@ -12,7 +12,7 @@ trait AssertTheUseOfTraits
      * @param string $modelClass
      * @return void
      */
-    protected function assertTheUseOfTraits(
+    protected function assertTraitsUse(
         $traitClass,
         $modelClass
     ) {

@@ -6,12 +6,11 @@ use App\Models\Category;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
-use Tests\Utils\Traits\AssertFieldsSaves;
-use Tests\Utils\Traits\AssertFieldsValidation;
+use Tests\Utils\Traits\AssertFields;
 
 class CategoryControllerFeatureTest extends TestCase
 {
-    use DatabaseMigrations, WithFaker, AssertFieldsValidation, AssertFieldsSaves;
+    use DatabaseMigrations, WithFaker, AssertFields;
 
     /**
      * @var Category $category

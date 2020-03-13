@@ -7,11 +7,11 @@ use App\Traits\Uploader;
 use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use PHPUnit\Framework\TestCase;
-use Tests\Utils\Traits\AssertTheUseOfTraits;
+use Tests\Utils\Traits\AssertTraits;
 
 class VideoUnitTest extends TestCase
 {
-    use AssertTheUseOfTraits;
+    use AssertTraits;
 
     public function testIfUseDefaultTraits()
     {
@@ -21,6 +21,6 @@ class VideoUnitTest extends TestCase
             SoftDeletes::class,
         ];
 
-        $this->assertTheUseOfTraits($traits, Video::class);
+        $this->assertTraitsUse($traits, Video::class);
     }
 }
