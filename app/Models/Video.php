@@ -15,9 +15,17 @@ class Video extends Model
 
     const CLASSIFICATION = ['L', 10, 12, 14, 16, 18];
 
+    const VIDEO_FILE_MAX_SIZE = 1024 * 5; // 5MB
+    const BANNER_FILE_MAX_SIZE = 1024 * 10; // 10MB
+    const TRAILER_FILE_MAX_SIZE = 1024 * 1024 * 1; // 1 GB
+    const THUMBNAIL_FILE_MAX_SIZE = 1024 * 1024 * 50; // 50 GB
+
     public $incrementing = false;
     protected $keyType = 'string';
 
+    /**
+     * @var array
+     */
     protected $fillable = [
         'title',
         'description',
@@ -40,45 +48,16 @@ class Video extends Model
         'thumbnail'
     ];
 
+    /**
+     * @var array
+     */
     protected $casts = [
         'duration' => 'int',
         'release_at' => 'date_format:Y-m-d'
     ];
 
-    // public function getVideoFileUrlAttribute()
-    // {
-    //     if ($this->video_file)
-    //         return $this->video_file;
-
-    //     return null;
-    // }
-
-    // public function getBannerFileUrlAttribute()
-    // {
-    //     if ($this->banner_file)
-    //         return $this->banner_file;
-
-    //     return null;
-    // }
-
-    // public function getTrailerFileUrlAttribute()
-    // {
-    //     if ($this->trailer_file)
-    //         return $this->trailer_file;
-
-    //     return null;
-    // }
-
-    // public function getThumbanilFileUrlAttribute()
-    // {
-    //     if ($this->thumbnail_file)
-    //         return $this->thumbnail_file;
-
-    //     return null;
-    // }
-
     /**
-     * Create a vídeo
+     * Cria um novo vídeo
      *
      * @param array $attributes
      * @return void
@@ -109,7 +88,7 @@ class Video extends Model
     }
 
     /**
-     * Update a vídeo
+     * Atualiza informações de um vídeo
      *
      * @param array $attributes
      * @param array $options
@@ -161,6 +140,58 @@ class Video extends Model
     }
 
     /**
+     * Gerar a url para o video
+     *
+     * @return string|null
+     */
+    public function getVideoUrlAttribute()
+    {
+        if ($this->video)
+            return $this->getUrl($this->video);
+
+        return null;
+    }
+
+    /**
+     * Gerar a url para o banner
+     *
+     * @return string|null
+     */
+    public function getBannerUrlAttribute()
+    {
+        if ($this->banner)
+            return $this->getUrl($this->banner);
+
+        return null;
+    }
+
+    /**
+     * Gerar a url para o trailer
+     *
+     * @return string|null
+     */
+    public function getTrailerUrlAttribute()
+    {
+        if ($this->trailer)
+            return $this->getUrl($this->trailer);
+
+        return null;
+    }
+
+    /**
+     * Gerar a url para o thumbnail
+     *
+     * @return string|null
+     */
+    public function getThumbnailUrlAttribute()
+    {
+        if ($this->thumbnail)
+            return $this->getUrl($this->thumbnail);
+
+        return null;
+    }
+
+    /**
      * Retorna todos as categorias do vídeo, inclusive as excluídas
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
@@ -181,7 +212,7 @@ class Video extends Model
     }
 
     /**
-     * Retorna o ID (uuid) do vídeo como nome do diretório do vídeo
+     * Retorna o nome do diretório do vídeo
      *
      * @return string
      */

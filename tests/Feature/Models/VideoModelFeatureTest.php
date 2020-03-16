@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\TestCase;
@@ -203,6 +204,52 @@ class VideoModelFeatureTest extends TestCase
 
         $this->assertTrue($hasError);
     }
+
+    public function testGetFIleUrlNullWhenFieldIsNull()
+    {
+        $video = factory(Video::class)->create();
+
+        foreach(Video::$fileFields as $field){
+            $this->assertNull($video->{"{$field}_url"});
+        }
+    }
+
+    public function testGetFilesUrlWithLocalDriver()
+    {
+        $fileFields = [];
+
+        foreach (Video::$fileFields as $field) {
+            $fileFields[$field] = "{$field}.test";
+        }
+
+        $video = factory(Video::class)->create($fileFields);
+
+        $driver = config('filesystems.default');
+        $baseUrl = config('filesystems.disks.' . $driver)['url'];
+
+        foreach ($fileFields as $field => $value) {
+            $this->assertEquals("{$baseUrl}/{$video->id}/{$value}", $video->{"{$field}_url"});
+        }
+    }
+
+    // public function testGetFilesUrlWithGCS()
+    // {
+    //     $fileFields = [];
+
+    //     foreach (Video::$fileFields as $field) {
+    //         $fileFields[$field] = "{$field}.test";
+    //     }
+
+    //     $video = factory(Video::class)->create($fileFields);
+
+    //     $baseUrl = config('filesystems.disks.gcs.storage_api_uri');
+
+    //     Config::set('filesystems.default', 'gcs');
+
+    //     foreach ($fileFields as $field => $value) {
+    //         $this->assertEquals("{$baseUrl}/{$video->id}/{$value}", $video->{"{$field}_url"});
+    //     }
+    // }
 
     private function getFakeFiles()
     {

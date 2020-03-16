@@ -119,30 +119,30 @@ trait Uploader
     /**
      * Retorna o link do arquivo
      *
-     * @params  UploadedFile|string $file
+     * @param  UploadedFile|string $file
      *
      * @return string
      */
-    // public function getUrl($file)
-    // {
-    //     return Storage::url($this->getPath($file));
-    // }
+    public function getUrl($file)
+    {
+        return Storage::url($this->getRelativePath($file));
+    }
 
     /**
-     * Retorna o caminho do arquivo
+     * Retorna o caminho relativo do arquivo
      *
      * @params  UploadedFile|string $file
      *
      * @return string
      */
-    // public function getPath($file)
-    // {
-    //     if ($file instanceof UploadedFile) {
-    //         $file = $file->hashName();
-    //     }
+    public function getRelativePath($file)
+    {
+        if ($file instanceof UploadedFile) {
+            $file = $file->hashName();
+        }
 
-    //     return "{$this->path()}/$file";
-    // }
+        return "{$this->path()}/$file";
+    }
 
     /**
      * Extract attributes files to upload

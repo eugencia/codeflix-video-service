@@ -13,6 +13,7 @@ services:
       - DB_PASSWORD=root
       - DB_PORT=3306
       - APP_ENV=local
+      - APP_URL=http://localhost:8000
       - DB_USERNAME=root
       - FILESYSTEM_DRIVER=videos
       - GOOGLE_CLOUD_PROJECT_ID=code-flix

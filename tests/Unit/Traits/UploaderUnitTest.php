@@ -24,6 +24,16 @@ class UploaderUnitTest extends TestCase
     }
 
     /**
+     * Verifica o retorno do caminho relativo do arquivo
+     *
+     * @return void
+     */
+    public function testGetRelativeFilePath()
+    {
+        $this->assertEquals("1/video.mp4", $this->videoStub->getRelativePath('video.mp4'));
+    }
+
+    /**
      * Upload single file
      */
     public function testUploadSingleFile()

@@ -2,6 +2,7 @@
 
 namespace Tests\Utils\Traits;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -39,41 +40,41 @@ trait AssertFiles
     /**
      * Afirma a existência de arquivo(s)
      *
-     * @param string $path
+     * @param Model $model
      * @param UploadedFile|UploadedFile[] $files
      * @return void
      */
-    public function assertFilesExists(string $path, $files)
+    public function assertFilesExists(Model $model, $files)
     {
         if (is_array($files)) {
             foreach ($files as $file) {
-                Storage::assertExists("{$path}/{$file->hashName()}");
+                Storage::assertExists($model->getRelativePath($file));
             }
 
             return;
         }
 
-        Storage::assertExists("{$path}/{$files->hashName()}");
+        Storage::assertExists($model->getRelativePath($files));
     }
 
     /**
      * Afirma a não existência de arquivo(s)
      *
-     * @param string $path
+     * @param Model $model
      * @param UploadedFile|UploadedFile[] $files
      * @return void
      */
-    public function assertFilesNotExists(string $path, $files)
+    public function assertFilesNotExists(Model $model, $files)
     {
 
         if (is_array($files)) {
             foreach ($files as $file) {
-                Storage::assertMissing("{$path}/{$file->hashName()}");
+                Storage::assertMissing($model->getRelativePath($file));
             }
 
             return;
         }
 
-        Storage::assertMissing("{$path}/{$files->hashName()}");
+        Storage::assertMissing($model->getRelativePath($files));
     }
 }
