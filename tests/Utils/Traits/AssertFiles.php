@@ -65,6 +65,7 @@ trait AssertFiles
      */
     public function assertFilesNotExists(string $path, $files)
     {
+
         if (is_array($files)) {
             foreach ($files as $file) {
                 Storage::assertMissing("{$path}/{$file->hashName()}");

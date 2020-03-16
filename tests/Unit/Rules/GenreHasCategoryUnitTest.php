@@ -5,8 +5,8 @@ namespace Tests\Unit\Rules;
 use App\Rules\GenreHasCategories;
 use Mockery;
 use Mockery\MockInterface;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use Tests\TestCase;
 
 class GenreHasCategoryUnitTest extends TestCase
 {

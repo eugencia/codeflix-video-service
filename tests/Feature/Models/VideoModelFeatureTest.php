@@ -25,6 +25,8 @@ class VideoModelFeatureTest extends TestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         $this->video = new Video;
     }
 
@@ -200,31 +202,6 @@ class VideoModelFeatureTest extends TestCase
         }
 
         $this->assertTrue($hasError);
-    }
-
-    public function testDeleteOldFiles()
-    {
-        Storage::fake();
-
-        $fakeFiles = $this->getFakeFiles();
-
-        $this->video->uploadFiles($fakeFiles);
-
-        // $this->video->removeOldFiles(); // Return 0
-        // $this->assertCount(count($fakeFiles), Storage::allFiles());
-
-        // $this->video->oldFiles = [
-        //     $fakeFiles[0]->hashName()
-        // ];
-
-        // $this->video->removeOldFiles(); // Return 0
-        // $this->assertCount(count($fakeFiles) - 1, Storage::allFiles());
-
-        // Storage::assertMissing("{$this->video->path()}/{$fakeFiles[0]->hashName()}");
-
-        // Storage::assertExists("{$this->video->path()}/{$fakeFiles[1]->hashName()}");
-        // Storage::assertExists("{$this->video->path()}/{$fakeFiles[2]->hashName()}");
-        // Storage::assertExists("{$this->video->path()}/{$fakeFiles[3]->hashName()}");
     }
 
     private function getFakeFiles()

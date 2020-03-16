@@ -6,7 +6,7 @@ use App\Models\Video;
 use App\Traits\Uploader;
 use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 use Tests\Utils\Traits\AssertTraits;
 
 class VideoUnitTest extends TestCase

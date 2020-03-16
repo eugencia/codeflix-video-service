@@ -27,10 +27,9 @@ trait Uploader
     protected abstract function path();
 
     /**
-     *
      * @return void
      */
-    public static function bootUpload()
+    public static function bootUploader()
     {
         static::updating(function (Model $model) {
 

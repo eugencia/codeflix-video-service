@@ -259,31 +259,6 @@ class VideoControllerFeatureTest extends TestCase
         $this->assertFilesExists($response->json('id'), $fakeFiles);
     }
 
-    public function testRollbackInStoreWithFiles()
-    {
-        Storage::fake();
-
-        Event::listen(TransactionCommitted::class, function () {
-            throw new TestException;
-        });
-
-        $hasError = false;
-
-        try {
-            Video::create(
-                $this->getFakeData() +
-                $this->getFakeFiles() +
-                $this->getFakeRelations());
-        } catch (\Throwable $th) {
-            //throw $th;
-
-            $this->assertCount(0, Storage::allFiles());
-            $hasError = true;
-        }
-
-        $this->assertTrue($hasError);
-    }
-
     public function testUpdateWithFiles()
     {
         Storage::fake();
@@ -299,7 +274,79 @@ class VideoControllerFeatureTest extends TestCase
         $response->assertOk();
 
         $this->assertFilesExists($response->json('id'), $fakeFiles);
+
+        $newData = $fakeData + $fakeRelations + ['video' => $this->getFakeFiles()['video']];
+
+        $response = $this->json("PUT", $this->routeUpdate(), $newData);
+
+        $response->assertOk();
+
+        //Existência dos arquivos antigos
+        $this->assertFilesExists($response->json('id'), [
+            $fakeFiles['trailer'],
+            $fakeFiles['thumbnail'],
+            $fakeFiles['banner'],
+        ]);
+
+        //Exclusão do atualizado
+        $this->assertFilesNotExists($response->json('id'), $fakeFiles['video']);
+
+        //Existência do novo arquivo
+        $this->assertFilesExists($response->json('id'), [
+            $newData['video'],
+        ]);
     }
+
+
+    public function testRollbackInStoreWithFiles()
+    {
+        Storage::fake();
+
+        Event::listen(TransactionCommitted::class, function () {
+            throw new TestException;
+        });
+
+        $hasError = false;
+
+        try {
+            Video::create(
+                $this->getFakeData() +
+                    $this->getFakeFiles() +
+                    $this->getFakeRelations()
+            );
+        } catch (TestException $th) {
+            $this->assertCount(0, Storage::allFiles());
+            $hasError = true;
+        }
+
+        $this->assertTrue($hasError);
+    }
+
+    public function testRollbackInUpdateWithFiles()
+    {
+        Storage::fake();
+
+        $video = factory(Video::class)->create();
+
+        Event::listen(TransactionCommitted::class, function () {
+            throw new TestException;
+        });
+
+        $hasError = false;
+
+        try {
+            $video->update(
+                $this->getFakeData() +
+                    $this->getFakeFiles()
+            );
+        } catch (TestException $th) {
+            $this->assertCount(0, Storage::allFiles());
+            $hasError = true;
+        }
+
+        $this->assertTrue($hasError);
+    }
+
 
     private function getFakeFiles()
     {

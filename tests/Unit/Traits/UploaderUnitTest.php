@@ -224,4 +224,36 @@ class UploaderUnitTest extends TestCase
         ], $attributes);
         $this->assertEquals([$firstFile, $secondFile], $fileFields);
     }
+
+    public function testDeleteOldFiles()
+    {
+        $fakeFiles = $this->getFakeFiles();
+
+        $this->videoStub->uploadFiles($fakeFiles);
+
+        $this->videoStub->removeOldFiles(); // Remove 0
+        $this->assertCount(count($fakeFiles), Storage::allFiles());
+
+        $this->videoStub->oldFiles = [
+            $fakeFiles['banner']->hashName()
+        ];
+
+        $this->videoStub->removeOldFiles(); // Remove 1
+        $this->assertCount(count($fakeFiles) - 1, Storage::allFiles());
+
+        Storage::assertMissing("1/{$fakeFiles['banner']->hashName()}");
+        Storage::assertExists("1/{$fakeFiles['thumbnail']->hashName()}");
+        Storage::assertExists("1/{$fakeFiles['trailer']->hashName()}");
+        Storage::assertExists("1/{$fakeFiles['video']->hashName()}");
+    }
+
+    private function getFakeFiles()
+    {
+        return [
+            'video' => UploadedFile::fake()->create('video.mp4'),
+            'banner' => UploadedFile::fake()->image('banner.jpg'),
+            'trailer' => UploadedFile::fake()->create('trailer.mp4'),
+            'thumbnail' => UploadedFile::fake()->image('thumbnail.jpg'),
+        ];
+    }
 }

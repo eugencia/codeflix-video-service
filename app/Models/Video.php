@@ -31,7 +31,7 @@ class Video extends Model
     ];
 
     /**
-     * @var array $fileFields
+     * @var array
      */
     public static $fileFields = [
         'video',
@@ -132,13 +132,13 @@ class Video extends Model
 
             DB::commit();
 
-            // if ($saved && count($files)) {
-            //     $this->removeOldFiles();
-            // }
+            if ($saved && count($files)) {
+                $this->removeOldFiles();
+            }
 
             return $saved;
         } catch (\Throwable $th) {
-            // $this->remove($files);
+            $this->removeFiles($files);
             DB::rollBack();
             throw $th;
         }
