@@ -22,4 +22,8 @@ class CastMember extends Model
         'name',
         'role'
     ];
+
+    protected $casts = [
+        'role' => 'integer'
+    ];
 }

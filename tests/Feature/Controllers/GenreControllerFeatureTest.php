@@ -3,7 +3,6 @@
 namespace Tests\Feature\Http;
 
 use App\Http\Controllers\GenreController;
-use App\Http\Requests\GenreRequest;
 use App\Models\Category;
 use App\Models\Genre;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -31,85 +30,40 @@ class GenreControllerFeatureTest extends TestCase
     {
         parent::setUp();
 
-        $this->genre = factory(Genre::class)->create();
+        $this->genre = factory(Genre::class)->create(['is_active' => true]);
     }
 
-    public function testInvalidateRequiredFields()
+    public function testValidateFields()
     {
         $data = ['name' => null, 'categories' => null];
 
         $this->assertFieldsValidationInCreating($data, 'required');
         $this->assertFieldsValidationInUpdating($data, 'required');
-    }
 
-    public function testInvalidateMaxSizeFields()
-    {
         $data = ['name' => $this->faker()->sentence(256)];
 
         $this->assertFieldsValidationInCreating($data, 'max.string', ['max' => 255]);
         $this->assertFieldsValidationInUpdating($data, 'max.string', ['max' => 255]);
-    }
 
-    public function testInvalidateBooleanIsActive()
-    {
         $data = ['is_active' => 'A'];
 
         $this->assertFieldsValidationInCreating($data, 'boolean');
         $this->assertFieldsValidationInUpdating($data, 'boolean');
-    }
 
-    public function testInvalidateCategoriesExistsButNotActive()
-    {
+        // Categoria inativa não pode
         $category = factory(Category::class)->create(['is_active' => false]);
-
         $data = ['categories' => [$category->id]];
 
         $this->assertFieldsValidationInCreating($data, 'exists');
         $this->assertFieldsValidationInUpdating($data, 'exists');
-    }
 
-    public function testInvalidateCategoriesExistsButIsDeleted()
-    {
-        $category = factory(Category::class)->create();
-
+        //Categoria excluída não pode
+        $category = factory(Category::class)->create(['is_active' => true]);
         $category->delete();
-
         $data = ['categories' => [$category->id]];
 
         $this->assertFieldsValidationInCreating($data, 'exists');
         $this->assertFieldsValidationInUpdating($data, 'exists');
-    }
-
-    public function testInvalidateShowGenreNotExists()
-    {
-        $response = $this->json("GET", route('genres.show', $this->faker()->uuid));
-
-        $response->assertNotFound();
-    }
-
-    public function testInvalidateShowGenreWasDeleted()
-    {
-        $this->genre->delete();
-
-        $response = $this->json("GET", route('genres.show', $this->genre->id));
-
-        $response->assertNotFound();
-    }
-
-    public function testInvalidateDeleteGenreNotExists()
-    {
-        $response = $this->json("DELETE", route('genres.show', $this->faker()->uuid));
-
-        $response->assertNotFound();
-    }
-
-    public function testInvalidateDeleteGenreWasDeleted()
-    {
-        $this->genre->delete();
-
-        $response = $this->json("DELETE", route('genres.show', $this->genre->id));
-
-        $response->assertNotFound();
     }
 
     public function testIndex()
@@ -117,60 +71,84 @@ class GenreControllerFeatureTest extends TestCase
         $response = $this->json("GET", route('genres.index'));
 
         $response->assertOk()
-            ->assertJsonCount(1);
+            ->assertJson([
+                'meta' => ['per_page' => 15]
+            ])
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => array_keys($this->genre->toArray())
+                ],
+                'meta' => [],
+                'links' => [],
+            ]);
     }
 
     public function testStore()
     {
         $data = $this->getFakeData();
 
-        $testData =  Arr::except($data, 'categories') + ['deleted_at' => null];
-
-        $response = $this->assertFieldsOnCreate($data, $testData, $testData);
-
-        $this->assertGenreHasCategory($response->json('id'), $data['categories'][0]);
-    }
-
-    public function testUpdate()
-    {
-        $category = factory(Category::class)->create(['is_active' => true]);
-
-        $data = $this->getFakeData();
-
-        $newData = array_merge(
-            $data,
-            [
-                'name' => 'updated', 'is_active' => !$data['is_active'],
-                'categories' => [$category->id]
-            ]
-        );
-
-        $testData =  Arr::except($newData, 'categories') + ['deleted_at' => null];
-
-        $response = $this->assertFieldsOnUpdate($newData, $testData, $testData);
-
-        $this->assertGenreHasCategory($response->json('id'), $category->id);
+        $testsOnResponse = $testOnDatabase = Arr::except($data, 'categories') + ['deleted_at' => null];
+        $response = $this->assertFieldsOnCreate($data, $testOnDatabase, $testsOnResponse);
+        $this->assertDatabaseHas('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $data['categories'][0]]);
     }
 
     public function testShow()
     {
-        $response = $this->json("GET", route('genres.show', $this->genre->id));
+        $response = $this->json('GET', route('genres.show', $this->genre->id));
 
-        $response->assertOk();
+        $response->assertOk()
+            ->assertJson(['data' => $this->genre->toArray()])
+            ->assertJsonStructure(['data' => [
+                'id',
+                'name',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ]]);
+
+        $response = $this->json("GET", route('genres.show', $this->faker()->uuid));
+        $response->assertNotFound();
+
+        $this->genre->delete();
+
+        $response = $this->json("GET", route('genres.show', $this->genre->id));
+        $response->assertNotFound();
+    }
+
+    public function testUpdate()
+    {
+        $data = $this->getFakeData(['name' => 'updated']);
+        $testsOnResponse = $testOnDatabase = Arr::except($data, 'categories') + ['deleted_at' => null];
+        $response = $this->assertFieldsOnCreate($data, $testOnDatabase, $testsOnResponse);
+        $this->assertDatabaseHas('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $data['categories']]);
+
+
+        $data = $this->getFakeData(['is_active' => !$this->genre->is_active]);
+        $testsOnResponse = $testOnDatabase = Arr::except($data, 'categories') + ['deleted_at' => null];
+        $response = $this->assertFieldsOnCreate($data, $testOnDatabase, $testsOnResponse);
+        $this->assertDatabaseHas('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $data['categories']]);
     }
 
 
     public function testDelete()
     {
+        $response = $this->json('DELETE', route('genres.destroy', $this->faker()->uuid));
+        $response->assertNotFound();
+        $this->assertNotNull(Genre::find($this->genre->id));
+        $this->assertNull(Genre::onlyTrashed()->find($this->genre->id));
+
         $response = $this->json('DELETE', route('genres.destroy', $this->genre->id));
-
         $response->assertNoContent();
+        $this->assertNull(Genre::find($this->genre->id));
+        $this->assertNotNull(Genre::onlyTrashed()->find($this->genre->id));
 
+        $response = $this->json('DELETE', route('genres.destroy', $this->genre)); // ja esta deletado
+        $response->assertNotFound();
         $this->assertNull(Genre::find($this->genre->id));
         $this->assertNotNull(Genre::onlyTrashed()->find($this->genre->id));
     }
 
-    public function testSyncCategories()
+    public function testSyncRelations()
     {
         $categories = factory(Category::class, 3)
             ->create(['is_active' => true])
@@ -183,24 +161,24 @@ class GenreControllerFeatureTest extends TestCase
         $data = ['name' => 'Gênero', 'is_active' => true, 'categories' => [$categories[0]]];
         $response = $this->json("POST", $this->routeStore(), $data);
 
-        $this->assertGenreHasCategory($response->json('id'), $categories[0]);
+        $this->assertDatabaseHas('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $categories[0]]);
 
         /**
          * Testar minha sincronização ao atualizar
          */
         $data = ['name' => 'Gênero', 'is_active' => true, 'categories' => [$categories[1], $categories[2]]];
-        $response = $this->json("PUT", route('genres.update', $response->json('id')), $data);
+        $response = $this->json("PUT", route('genres.update', $response->json('data.id')), $data);
 
-        $this->assertDatabaseMissing('category_genre', ['genre_id' => $response->json('id'), 'category_id' => $categories[0]]);
-        $this->assertGenreHasCategory($response->json('id'), $categories[1]);
-        $this->assertGenreHasCategory($response->json('id'), $categories[2]);
+        $this->assertDatabaseMissing('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $categories[0]]);
+        $this->assertDatabaseHas('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $categories[1]]);
+        $this->assertDatabaseHas('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $categories[2]]);
 
         $data = ['name' => 'Gênero', 'is_active' => true, 'categories' => [$categories[0], $categories[2]]];
-        $response = $this->json("PUT", route('genres.update', $response->json('id')), $data);
+        $response = $this->json("PUT", route('genres.update', $response->json('data.id')), $data);
 
-        $this->assertDatabaseMissing('category_genre', ['genre_id' => $response->json('id'), 'category_id' => $categories[1]]);
-        $this->assertGenreHasCategory($response->json('id'), $categories[0]);
-        $this->assertGenreHasCategory($response->json('id'), $categories[2]);
+        $this->assertDatabaseMissing('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $categories[1]]);
+        $this->assertDatabaseHas('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $categories[0]]);
+        $this->assertDatabaseHas('category_genre', ['genre_id' => $response->json('data.id'), 'category_id' => $categories[2]]);
     }
 
     public function testRollbackStore()
@@ -214,7 +192,8 @@ class GenreControllerFeatureTest extends TestCase
         $genreController->shouldReceive('validate')
             ->withAnyArgs()
             ->andReturn([
-                'name' => $this->faker()->name
+                'name' => $this->faker()->name,
+                'categories' => []
             ]);
 
         // Lançar exceção quando o método syncRelations for chamada
@@ -229,8 +208,8 @@ class GenreControllerFeatureTest extends TestCase
         try {
             $genreController->store($request);
         } catch (TestException $e) {
-            // 1 no setup + 1 ao executar o syncRelations
             $this->assertCount(1, Genre::all());
+            $this->assertCount(0, Genre::with('categories')->first()->categories);
             $hasError = true;
         }
 
@@ -270,6 +249,7 @@ class GenreControllerFeatureTest extends TestCase
         } catch (TestException $e) {
             // 1 no setup + 1 ao executar o syncRelations
             $this->assertCount(1, Genre::all());
+            $this->assertCount(0, Genre::with('categories')->first()->categories);
             $hasError = true;
         }
 
@@ -313,10 +293,5 @@ class GenreControllerFeatureTest extends TestCase
             'is_active' => $data['is_active'] ?? $this->faker()->boolean,
             'categories' => $data['categories'] ?? [$category->id]
         ];
-    }
-
-    private function assertGenreHasCategory($genreId, $categoryId)
-    {
-        $this->assertDatabaseHas('category_genre', ['genre_id' => $genreId, 'category_id' => $categoryId]);
     }
 }

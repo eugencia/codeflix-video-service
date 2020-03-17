@@ -23,12 +23,13 @@ class VideoResource extends JsonResource
             'duration' => $this->duration,
             'categories' => CategoryResource::collection($this->whenLoaded('categories')),
             'genres' => GenreResource::collection($this->whenLoaded('genres')),
-            'files' => [
-                'video' => $this->video_file,
-                'thumbnail' => $this->thumbnail_file,
-                'banner_file' => $this->banner_file,
-                'trailer_file' => $this->trailer_file,
-            ]
+            'video' => $this->video_url,
+            'thumbnail' => $this->thumbnail_url,
+            'banner' => $this->banner_url,
+            'trailer' => $this->trailer_url,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'deleted_at' => $this->deleted_at
         ];
     }
 }

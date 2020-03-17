@@ -27,94 +27,92 @@ class CategoryControllerFeatureTest extends TestCase
         $this->category = factory(Category::class)->create();
     }
 
-    public function testInvalidateRequiredName()
+    public function testValidateFields()
     {
-        $data = ['name' => null];
+        $this->assertFieldsValidationInCreating(['name' => null], 'required');
+        $this->assertFieldsValidationInUpdating(['name' => null], 'required');
 
-        $this->assertFieldsValidationInCreating($data, 'required');
-        $this->assertFieldsValidationInUpdating($data, 'required');
+        $this->assertFieldsValidationInCreating(['name' => str_repeat('a', 256)], 'max.string', ['max' => 255]);
+        $this->assertFieldsValidationInUpdating(['name' => str_repeat('a', 256)], 'max.string', ['max' => 255]);
+
+        $this->assertFieldsValidationInCreating(['is_active' => 'A'], 'boolean');
+        $this->assertFieldsValidationInUpdating(['is_active' => 'A'], 'boolean');
     }
 
-    public function testInvalidateMaxSizeName()
+    public function testIndex()
     {
-        $data = ['name' => $this->faker()->sentence(256)];
+        $response = $this->json("GET", route('categories.index'));
 
-        $this->assertFieldsValidationInCreating($data, 'max.string', ['max' => 255]);
-        $this->assertFieldsValidationInUpdating($data, 'max.string', ['max' => 255]);
+        $response->assertOk()
+            ->assertJson([
+                'meta' => ['per_page' => 15]
+            ])
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => array_keys($this->category->toArray())
+                ],
+                'meta' => [],
+                'links' => [],
+            ]);
     }
 
-    public function testInvalidateBooleanIsActive()
-    {
-        $data = ['is_active' => 'A'];
-
-        $this->assertFieldsValidationInCreating($data, 'boolean');
-        $this->assertFieldsValidationInUpdating($data, 'boolean');
-    }
-
-    public function testStoreCategoryWithOnlyName()
+    public function testStore()
     {
         $data = ['name' => $this->faker()->name];
+        $testsOnResponse = $testOnDatabase = $data + ['is_active' => true, 'description' => null, 'deleted_at' => null];
+        $this->assertFieldsOnCreate($data, $testOnDatabase, $testsOnResponse);
 
-        $attributesTestsOnDatabase = $data + ['is_active' => true, 'description' => null, 'deleted_at' => null];
-        $attributesTestsOnJsonResponse = $data + ['is_active' => true, 'description' => null, 'deleted_at' => null];
-
-        $this->assertFieldsOnCreate($data, $attributesTestsOnDatabase, $attributesTestsOnJsonResponse);
-    }
-
-    public function testStoreCategoryWithSomeDescription()
-    {
         $data = ['name' => $this->faker()->name, 'description' => $this->faker()->sentence];
+        $testsOnResponse = $testOnDatabase = $data + ['is_active' => true, 'deleted_at' => null];
+        $this->assertFieldsOnCreate($data, $testOnDatabase, $testsOnResponse);
 
-        $this->assertFieldsOnCreate($data, $data + ['deleted_at' => null]);
-    }
-
-    public function testStoreCategoryWithStatusInactive()
-    {
         $data = ['name' => 'Gênero', 'is_active' => false];
-
-        $this->assertFieldsOnCreate($data, $data + ['is_active' => $data['is_active'], 'deleted_at' => null]);
+        $testsOnResponse = $testOnDatabase = $data + ['is_active' => false, 'description' => null, 'deleted_at' => null];
+        $this->assertFieldsOnCreate($data, $testOnDatabase, $testsOnResponse);
     }
 
-    public function testUpdateCategoryName()
+    public function testShow()
     {
-        $newData = $this->getFakeData(['name' => 'Updated']);
+        $response = $this->json('GET', route('categories.show', $this->category->id));
 
-        $this->assertFieldsOnUpdate($newData, $newData + ['deleted_at' => null]);
+        $response->assertOk()
+            ->assertJson(['data' => $this->category->toArray()])
+            ->assertJsonStructure(['data' => [
+                'id',
+                'name',
+                'description',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ]]);
+
+        $response = $this->json("GET", route('categories.show', $this->faker()->uuid));
+        $response->assertNotFound();
+
+        $this->category->delete();
+
+        $response = $this->json("GET", route('categories.show', $this->category->id));
+        $response->assertNotFound();
     }
 
-    public function testUpdateCategoryDescription()
+    public function testUpdate()
     {
-        $newData = $this->getFakeData(['description' => 'Updated']);
+        $data = ['name' => 'Updated'];
+        $testsOnResponse = $testOnDatabase = $data + ['is_active' => true, 'deleted_at' => null];
+        $this->assertFieldsOnUpdate($data, $testOnDatabase, $testsOnResponse);
 
-        $this->assertFieldsOnUpdate($newData, $newData + ['deleted_at' => null]);
+        $data = ['name' => 'Updated', 'description' => 'Updated'];
+        $testsOnResponse = $testOnDatabase = $data + ['is_active' => true, 'deleted_at' => null];
+        $this->assertFieldsOnUpdate($data, $testOnDatabase, $testsOnResponse);
+
+        $data = ['name' => 'Updated', 'is_active' => !$this->category->is_active];
+        $testsOnResponse = $testOnDatabase = $data + ['is_active' => $data['is_active'], 'deleted_at' => null];
+        $this->assertFieldsOnUpdate($data, $testOnDatabase, $testsOnResponse);
     }
 
-    public function testUpdateCategoryStatus()
-    {
-        $newData = $this->getFakeData(['is_active' => !$this->category->is_active]);
-
-        $this->assertFieldsOnUpdate($newData, $newData + ['deleted_at' => null]);
-    }
-
-    public function testUpdateCategory()
-    {
-        $data = $this->getFakeData(['name' => 'Updated']);
-
-        $this->assertFieldsOnUpdate($data, $data + ['deleted_at' => null]);
-
-        $data['description'] = 'Updated';
-
-        $this->assertFieldsOnUpdate($data, $data + ['deleted_at' => null]);
-
-        $data['is_active'] = !$this->category->is_active;
-
-        $this->assertFieldsOnUpdate($data, $data + ['deleted_at' => null]);
-    }
-
-    public function testDeleteCategory()
+    public function testDelete()
     {
         $response = $this->json('DELETE', route('categories.destroy', $this->category->id));
-
         $response->assertNoContent();
 
         $this->assertNull(Category::find($this->category->id));
@@ -147,14 +145,5 @@ class CategoryControllerFeatureTest extends TestCase
     protected function routeUpdate()
     {
         return route('categories.update', $this->category);
-    }
-
-    private function getFakeData(array $data = [])
-    {
-        return [
-            'name' => $data['name'] ?? $this->faker()->name,
-            'description' => $data['description'] ?? $this->faker()->sentence,
-            'is_active' => $data['is_active'] ?? $this->faker()->boolean,
-        ];
     }
 }

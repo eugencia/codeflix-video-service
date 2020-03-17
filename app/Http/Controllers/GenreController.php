@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\GenreRequest;
+use App\Http\Resources\GenreResource;
 use App\Models\Genre;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,11 @@ class GenreController extends Controller
     protected function request()
     {
         return GenreRequest::class;
+    }
+
+    protected function resource()
+    {
+        return GenreResource::class;
     }
 
     /**
@@ -42,7 +48,7 @@ class GenreController extends Controller
 
             DB::commit();
 
-            return $genreCreated;
+            return new GenreResource($genreCreated);
         } catch (\Throwable $th) {
             DB::rollBack();
             throw $th;
@@ -74,7 +80,7 @@ class GenreController extends Controller
 
             DB::commit();
 
-            return $genre;
+            return new GenreResource($genre);
         } catch (\Throwable $th) {
             DB::rollBack();
             throw $th;

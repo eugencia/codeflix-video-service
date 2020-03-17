@@ -16,12 +16,16 @@ abstract class Controller extends BaseController
 
     protected abstract function request();
 
+    protected abstract function resource();
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return $this->model()::all();
+        $resource = $this->resource();
+
+        return $this->resource()::collection($this->model()::paginate());
     }
 
     /**
@@ -29,7 +33,11 @@ abstract class Controller extends BaseController
      */
     public function show($object)
     {
-        return $this->getModelBy($object);
+        $object = $this->getModelBy($object);
+
+        $resource = $this->resource();
+
+        return new $resource($object);
     }
 
     public function store(Request $request)
@@ -38,7 +46,9 @@ abstract class Controller extends BaseController
 
         $objectCreated->refresh();
 
-        return $objectCreated;
+        $resource = $this->resource();
+
+        return new $resource($objectCreated);
     }
 
     /**
@@ -54,7 +64,9 @@ abstract class Controller extends BaseController
 
         $object->refresh();
 
-        return $object;
+        $resource = $this->resource();
+
+        return new $resource($object);
     }
 
     /**

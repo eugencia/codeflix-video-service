@@ -20,13 +20,9 @@ class VideoController extends Controller
         return VideoRequest::class;
     }
 
-    protected function getRules()
+    protected function resource()
     {
-        $videoRequest = $this->request();
-
-        $videoRequest = new $videoRequest;
-
-        return $videoRequest->rules();
+        return VideoResource::class;
     }
 
     /**
@@ -44,7 +40,7 @@ class VideoController extends Controller
         $video = Video::create($data);
         $video->refresh();
 
-        return $video;
+        return new VideoResource($video);
     }
 
     /**
@@ -64,7 +60,16 @@ class VideoController extends Controller
         $video->update($data);
         $video->refresh();
 
-        return $video;
+        return new VideoResource($video);
+    }
+
+    protected function getRules()
+    {
+        $videoRequest = $this->request();
+
+        $videoRequest = new $videoRequest;
+
+        return $videoRequest->rules();
     }
 
     protected function addRule(Request $request)

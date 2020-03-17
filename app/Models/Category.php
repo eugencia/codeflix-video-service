@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Category extends Model
 {
-    use Uuid,
-        SoftDeletes;
+    use Uuid, SoftDeletes;
 
     protected $keyType = 'string';
 
@@ -22,7 +21,6 @@ class Category extends Model
     ];
 
     protected $casts = [
-        'id' => 'string',
         'is_active' => 'boolean',
     ];
 

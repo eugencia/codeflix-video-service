@@ -9,13 +9,21 @@ use Illuminate\Testing\TestResponse;
 
 trait AssertFields
 {
+    /**
+     * Verifica a validação nos campos ao criar
+     *
+     * @param array $data
+     * @param string $rule
+     * @param array $params
+     * @return void
+     */
     protected function assertFieldsValidationInCreating(
         array $data,
         string $rule,
         array $params = []
     ) {
         $response = $this->json("POST", $this->routeStore(), $data);
-
+        // dd($response->content(), array_keys($data), $rule, $params);
         $this->assertUnprocessableEntityField($response, array_keys($data), $rule, $params);
     }
 
@@ -33,17 +41,18 @@ trait AssertFields
         TestResponse $response,
         array $attributes = [],
         string $rule,
-        array $ruleParams = []
+        array $params = []
     ) {
         $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
             ->assertJsonValidationErrors($attributes);
 
         foreach ($attributes as $attribute) {
             $field = str_replace('_', ' ', $attribute);
+
             $response->assertJsonFragment([
                 Lang::get(
                     "validation.{$rule}",
-                    ['attribute' => $field] + $ruleParams
+                    ['attribute' => $field] + $params
                 )
             ]);
         }
@@ -60,26 +69,22 @@ trait AssertFields
      * Faz a verificação dos attributes ao criar uma nova instância
      *
      * @param array $data
-     * @param array $attributesInTestOnDatabase
-     * @param array $attributesInTestOnJsonResponse
+     * @param array $testOnDatabase
+     * @param array $testOnResponse
      * @return TestResponse
      */
     protected function assertFieldsOnCreate(
         array $data,
-        array $attributesInTestOnDatabase,
-        array $attributesInTestOnJsonResponse = []
+        array $testOnDatabase,
+        array $testOnResponse = []
     ): TestResponse {
-        $response = $this->makeResponse(
-            "POST",
-            $this->routeStore(),
-            $data,
-            Response::HTTP_CREATED
-        );
 
-        $this->assertOnDatabase($response, $attributesInTestOnDatabase);
+        $response = $this->json("POST", $this->routeStore(), $data);
 
-        if(count($attributesInTestOnJsonResponse))
-            $this->assertOnResponse($response, $attributesInTestOnJsonResponse);
+        $this->assertOnDatabase($response, $testOnDatabase);
+
+        if (count($testOnResponse))
+            $this->assertOnResponse($response, $testOnResponse);
 
         return $response;
     }
@@ -88,27 +93,22 @@ trait AssertFields
      * Faz a verificação dos attributes ao atualizar uma nova instância
      *
      * @param array $data
-     * @param array $attributesInTestOnDatabase
-     * @param array $attributesInTestOnJsonResponse
+     * @param array $testOnDatabase
+     * @param array $testOnResponse
      * @return TestResponse
      */
     protected function assertFieldsOnUpdate(
         array $data,
-        array $attributesInTestOnDatabase,
-        array $attributesInTestOnJsonResponse = []
+        array $testOnDatabase,
+        array $testOnResponse = []
     ): TestResponse {
 
-        $response = $this->makeResponse(
-            "PUT",
-            $this->routeUpdate(),
-            $data,
-            Response::HTTP_OK
-        );
+        $response = $this->json("PUT", $this->routeUpdate(), $data);
 
-        $this->assertOnDatabase($response, $attributesInTestOnDatabase);
+        $this->assertOnDatabase($response, $testOnDatabase);
 
-        if(count($attributesInTestOnJsonResponse))
-            $this->assertOnResponse($response, $attributesInTestOnJsonResponse);
+        if (count($testOnResponse))
+            $this->assertOnResponse($response, $testOnResponse);
 
         return $response;
     }
@@ -141,23 +141,6 @@ trait AssertFields
     }
 
     /**
-     * Junção das funções de asserções no banco de dados e json response
-     *
-     * @param TestResponse $response
-     * @param array $attributes
-     * @return void
-     */
-    private function makeAssertions(
-        TestResponse $response,
-        array $attributesInTestOnDatabase,
-        array $attributesInTestOnJsonResponse
-    ): void {
-        $this->assertOnDatabase($response, $attributesInTestOnDatabase);
-
-        $this->assertOnResponse($response, $attributesInTestOnJsonResponse);
-    }
-
-    /**
      * Asserções a serem verificadas no bando de dados
      *
      * @param TestResponse $response
@@ -166,7 +149,7 @@ trait AssertFields
      */
     private function assertOnDatabase(TestResponse $response, array $attributes = []): void
     {
-        $attributes += ['id' => $response->json('id')];
+        $attributes += ['id' => $this->getIdFromResponse($response)];
 
         $this->assertDatabaseHas($this->getModel()->getTable(), $attributes);
     }
@@ -180,7 +163,7 @@ trait AssertFields
      */
     private function assertOnResponse(TestResponse $response, array $attributes): void
     {
-        $attributes += ['id' => $response->json('id')];
+        $attributes += ['id' => $this->getIdFromResponse($response)];
 
         $response->assertJsonFragment($attributes);
     }
@@ -195,5 +178,21 @@ trait AssertFields
         $model = $this->model();
 
         return (new $model);
+    }
+
+    /**
+     * Retorna o valor do ID
+     *
+     * @param TestResponse $response
+     * @return mixed
+     */
+    private function getIdFromResponse(TestResponse $response)
+    {
+        return $response->json('id') ?? $response->json('data.id');
+    }
+
+    private function getDataFromResponse(TestResponse $response)
+    {
+        return $response->json('data') ?? $response->json();
     }
 }
