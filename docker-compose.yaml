@@ -1,7 +1,7 @@
 version: "3.7"
 
 services:
-  codeflix-video-app:
+  app:
     build: ./.docker/app
     container_name: codeflix-video-app
     volumes:
@@ -22,10 +22,10 @@ services:
       - GOOGLE_CLOUD_STORAGE_PATH_PREFIX=
       - GOOGLE_CLOUD_STORAGE_API_URI=https://console.cloud.google.com/storage/browser/video-flix
     networks:
-      - codeflix-video
+      - codeflix
     depends_on:
-      - codeflix-video-mysql
-  codeflix-video-nginx:
+      - database
+  server:
     build: .docker/nginx
     container_name: codeflix-video-nginx
     restart: always
@@ -39,11 +39,11 @@ services:
     volumes:
       - .:/var/www
     networks:
-      - codeflix-video
+      - codeflix
     depends_on:
-      - codeflix-video-app
+      - app
 
-  codeflix-video-mysql:
+  database:
     image: mysql:5.7
     command: --innodb=use-native-aio=0
     container_name: codeflix-video-mysql
@@ -58,23 +58,8 @@ services:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_USER=root
     networks:
-      - codeflix-video
-
-  codeflix-video-phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: codeflix-video-phpmyadmin
-    ports:
-      - 9000:80
-    environment:
-      - PMA_HOST=codeflix-video-mysql
-      - PMA_PORT=3306
-      - PMA_USER=root
-      - PMA_PASSWORD=root
-    depends_on:
-      - codeflix-video-mysql
-    networks:
-      - codeflix-video
+      - codeflix
 
 networks:
-  codeflix-video:
+  codeflix:
     driver: bridge
