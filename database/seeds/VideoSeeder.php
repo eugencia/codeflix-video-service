@@ -17,14 +17,11 @@ class VideoSeeder extends Seeder
      */
     public function run()
     {
-        $directory = Storage::getDriver()->getAdapter()->getPathPrefix();
-        File::deleteDirectory($directory);
-
         $this->removeDirectory();
 
         Model::reguard();
 
-        factory(Video::class, 40)->make()
+        factory(Video::class, 4)->make()
             ->each(function ($video) {
 
                 Video::create(
@@ -47,9 +44,7 @@ class VideoSeeder extends Seeder
 
     private function removeDirectory()
     {
-        $directory = Storage::getDriver()->getAdapter()->getPathPrefix();
-
-        File::deleteDirectory($directory);
+        File::deleteDirectory(Storage::getDriver()->getAdapter()->getPathPrefix());
     }
 
     private function makeFile($name, $mimeType, $size = 0)

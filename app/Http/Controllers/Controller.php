@@ -21,11 +21,9 @@ abstract class Controller extends BaseController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $resource = $this->resource();
-
-        return $this->resource()::collection($this->model()::paginate());
+        return $this->resource()::collection($this->model()::paginate((int) $request->perPage));
     }
 
     /**

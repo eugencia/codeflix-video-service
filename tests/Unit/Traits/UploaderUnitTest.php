@@ -2,13 +2,16 @@
 
 namespace Tests\Unit\Traits;
 
+use App\Traits\File;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\Stubs\Models\VideoStub;
 use Tests\TestCase;
+use Tests\Utils\Traits\AssertStorage;
 
 class UploaderUnitTest extends TestCase
 {
+    use AssertStorage;
     /**
      * @var VideoStub $videoStub
      */
@@ -21,6 +24,8 @@ class UploaderUnitTest extends TestCase
         Storage::fake();
 
         $this->videoStub =  new VideoStub;
+
+        $this->assertStorageDeleteFiles();
     }
 
     /**
@@ -104,30 +109,6 @@ class UploaderUnitTest extends TestCase
         Storage::assertExists("1/{$files[1]->hashName()}");
 
         $this->videoStub->removeFiles($files);
-
-        Storage::assertMissing("1/{$files[0]->hashName()}");
-        Storage::assertMissing("1/{$files[1]->hashName()}");
-    }
-
-    /**
-     * Remove multiples files by hash name
-     */
-    public function testRemoveMultiplesFilesByHashName()
-    {
-        $files =  [
-            UploadedFile::fake()->create("video1"),
-            UploadedFile::fake()->create("video2")
-        ];
-
-        $this->videoStub->uploadFiles($files);
-
-        Storage::assertExists("1/{$files[0]->hashName()}");
-        Storage::assertExists("1/{$files[1]->hashName()}");
-
-        $this->videoStub->removeFiles([
-            $files[0]->hashName(),
-            $files[1]->hashName()
-        ]);
 
         Storage::assertMissing("1/{$files[0]->hashName()}");
         Storage::assertMissing("1/{$files[1]->hashName()}");
@@ -256,6 +237,31 @@ class UploaderUnitTest extends TestCase
         Storage::assertExists("1/{$fakeFiles['trailer']->hashName()}");
         Storage::assertExists("1/{$fakeFiles['video']->hashName()}");
     }
+
+    /**
+     * Remove multiples files by hash name
+     */
+    public function testRemoveMultiplesFilesByHashName()
+    {
+        $files =  [
+            UploadedFile::fake()->create("video1"),
+            UploadedFile::fake()->create("video2")
+        ];
+
+        $this->videoStub->uploadFiles($files);
+
+        Storage::assertExists("1/{$files[0]->hashName()}");
+        Storage::assertExists("1/{$files[1]->hashName()}");
+
+        $this->videoStub->removeFiles([
+            $files[0]->hashName(),
+            $files[1]->hashName()
+        ]);
+
+        Storage::assertMissing("1/{$files[0]->hashName()}");
+        Storage::assertMissing("1/{$files[1]->hashName()}");
+    }
+
 
     private function getFakeFiles()
     {
