@@ -208,8 +208,7 @@ class VideoControllerFeatureTest extends TestCase
             $this->assertDatabaseHas('category_video', ['video_id' => $response->json('data.id'), 'category_id' => $value['data']['categories'][0]]);
         }
     }
-
-    public function testStoreWithFiles()
+    public function testSaveWithFiles()
     {
         Storage::fake();
 
@@ -222,144 +221,218 @@ class VideoControllerFeatureTest extends TestCase
         ];
         $fakeRelations = $this->getFakeRelations();
 
-        $data = $fakeData + $fakeFiles + $fakeRelations;
+        $data = [
+            [
+                'data' => $fakeData + $fakeFiles + $fakeRelations,
+                'test' => $fakeData + ['deleted_at' => null]
+            ]
+        ];
 
-        $test = Arr::except($data, array_merge(['categories', 'genres'], array_keys($fakeFiles)) + ['deleted_at' => null]);
-        $response = $this->assertFieldsOnCreate($data, $test, $test);
+        foreach ($data as $key => $value) {
+            // Store
+            $response = $this->assertFieldsOnCreate(
+                $value['data'],
+                $value['test'],
+                $value['test']
+            );
+            $this->assertFilesExists(
+                Video::find($response->json('data.id')),
+                $fakeFiles
+            );
 
-        $this->assertFilesExists(Video::find($response->json('data.id')), $fakeFiles);
+            // Update
+            $newData = $fakeData + $fakeRelations + ['video' => $this->makeFile('other', 'mp4')];
+
+            $response = $this->json(
+                "PUT",
+                route('videos.update', $response->json('data.id')),
+                $newData
+            );
+
+            // //Existência dos arquivos antigos
+            $this->assertFilesExists(Video::find($response->json('data.id')), [
+                $value['data']['trailer'],
+                $value['data']['thumbnail'],
+                $value['data']['banner'],
+            ]);
+
+            //Exclusão do atualizado
+            $this->assertFilesNotExists(
+                Video::find($response->json('data.id')),
+                $value['data']['video']
+            );
+
+            // Existência do novo arquivo
+            $this->assertFilesExists(Video::find($response->json('data.id')), [
+                $newData['video'],
+            ]);
+        }
     }
 
-    public function testUpdateWithFiles()
+    public function testShow()
+    {
+        $response = $this->json('GET', route('videos.show', $this->video->id));
+
+        $response->assertOk()
+            ->assertJson(['data' => $this->video->toArray()])
+            ->assertJsonStructure(['data' => [
+                'id',
+                'title',
+                'description',
+                'classification',
+                'release_at',
+                'duration',
+                'video',
+                'banner',
+                'trailer',
+                'thumbnail',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ]]);
+
+        $response = $this->json("GET", route('videos.show', $this->faker()->uuid));
+        $response->assertNotFound();
+
+        $this->video->delete();
+
+        $response = $this->json("GET", route('videos.show', $this->video->id));
+        $response->assertNotFound();
+    }
+
+    public function testDelete()
+    {
+        $response = $this->json('DELETE', route('videos.destroy', $this->faker()->uuid));
+        $response->assertNotFound();
+        $this->assertNotNull(Video::find($this->video->id));
+        $this->assertNull(Video::onlyTrashed()->find($this->video->id));
+
+        $response = $this->json('DELETE', route('videos.destroy', $this->video->id));
+        $response->assertNoContent();
+        $this->assertNull(Video::find($this->video->id));
+        $this->assertNotNull(Video::onlyTrashed()->find($this->video->id));
+
+        $response = $this->json('DELETE', route('videos.destroy', $this->video)); // ja esta deletado
+        $response->assertNotFound();
+        $this->assertNull(Video::find($this->video->id));
+        $this->assertNotNull(Video::onlyTrashed()->find($this->video->id));
+    }
+
+    public function testSyncRelations()
+    {
+        $firstRelations = $this->getFakeRelations();
+        $secondRelations = $this->getFakeRelations();
+
+        /**
+         * Primeiro criar um vídeo
+         */
+        $response = $this->json(
+            "POST",
+            $this->routeStore(),
+            $this->getFakeData() + $firstRelations
+        );
+        $this->assertDatabaseHas(
+            'genre_video',
+            [
+                'video_id' => $response->json('data.id'),
+                'genre_id' => $firstRelations['genres'][0]
+            ]
+        );
+        $this->assertDatabaseHas(
+            'category_video',
+            [
+                'video_id' => $response->json('data.id'),
+                'category_id' => $firstRelations['categories'][0]
+            ]
+        );
+
+        /**
+         * Atualiza as categorias e gêneros
+         */
+        $response = $this->json(
+            "PUT",
+            route('videos.update', $response->json('data.id')),
+            $this->getFakeData() + $secondRelations
+        );
+        $this->assertDatabaseHas(
+            'genre_video',
+            [
+                'video_id' => $response->json('data.id'),
+                'genre_id' => $secondRelations['genres'][0]
+            ]
+        );
+        $this->assertDatabaseHas(
+            'category_video',
+            [
+                'video_id' => $response->json('data.id'),
+                'category_id' => $secondRelations['categories'][0]
+            ]
+        );
+        $this->assertDatabaseMissing(
+            'category_video',
+            [
+                'video_id' => $response->json('data.id'),
+                'category_id' => $firstRelations['categories'][0]
+            ]
+        );
+        $this->assertDatabaseMissing(
+            'genre_video',
+            [
+                'video_id' => $response->json('data.id'),
+                'genre_id' => $firstRelations['genres'][0]
+            ]
+        );
+    }
+
+    public function testRollbackFilesInStores()
     {
         Storage::fake();
 
-        $fakeData = $this->getFakeData();
-        $fakeFiles = [
-            'video' => $this->makeFile('test', 'mp4'),
-            'banner' => $this->makeFile('banner', 'jpg'),
-            'trailer' => $this->makeFile('trailer', 'mp4'),
-            'thumbnail' => $this->makeFile('thumbnail', 'jpg'),
-        ];
-        $fakeRelations = $this->getFakeRelations();
+        Event::listen(TransactionCommitted::class, function () {
+            throw new TestException;
+        });
 
-        $data = $fakeData + $fakeFiles + $fakeRelations;
-        $test = Arr::except($data, array_merge(['categories', 'genres'], array_keys($fakeFiles)) + ['deleted_at' => null]);
-        $response = $this->assertFieldsOnCreate($data, $test, $test);
+        $hasError = false;
 
-        $this->assertFilesExists(Video::find($response->json('data.id')), $fakeFiles);
+        try {
+            Video::create(
+                $this->getFakeData() +
+                    ['video' => $this->makeFile()] +
+                    $this->getFakeRelations()
+            );
+        } catch (TestException $th) {
+            $this->assertCount(0, Storage::allFiles());
+            $hasError = true;
+        }
 
-        $data = $fakeData + $fakeRelations + ['video' => $this->makeFile('test', 'mp4')];
-        $test = Arr::except($data, array_merge(['categories', 'genres'], array_keys($fakeFiles)) + ['deleted_at' => null]);
-        
-        $this->assertFieldsOnUpdate($data, $test, $test);
-
-        // //Existência dos arquivos antigos
-        $this->assertFilesExists(Video::find($response->json('data.id')), [
-            $fakeFiles['trailer'],
-            $fakeFiles['thumbnail'],
-            $fakeFiles['banner'],
-        ]);
-
-        //     //Exclusão do atualizado
-        // $this->assertFilesNotExists(Video::find($response->json('data.id')), $fakeFiles['video']);
-
-        //     //Existência do novo arquivo
-        //     $this->assertFilesExists(Video::find($response->json('id')), [
-        //         $newData['video'],
-        //     ]);
+        $this->assertTrue($hasError);
     }
 
+    public function testRollbackFilesInUpdate()
+    {
+        Storage::fake();
 
-    // public function testSyncRelations()
-    // {
-    //     $firstRelations = $this->getFakeRelations();
-    //     $secondRelations = $this->getFakeRelations();
+        $video = factory(Video::class)->create();
 
-    //     $data = $this->getFakeData();
+        Event::listen(TransactionCommitted::class, function () {
+            throw new TestException;
+        });
 
-    //     /**
-    //      * Primeiro criar um vídeo
-    //      */
-    //     $response = $this->json("POST", $this->routeStore(), $data + $firstRelations);
-    //     $this->assertVideoHasCategory($response->json('id'), $firstRelations['categories'][0]);
-    //     $this->assertVideoHasGenre($response->json('id'), $firstRelations['genres'][0]);
+        $hasError = false;
 
-    //     /**
-    //      * Atualiza as categorias e gêneros
-    //      */
-    //     $data = $this->getFakeData();
-    //     $response = $this->json("PUT", route('videos.update', $response->json('id')), $data + $secondRelations);
-    //     $this->assertVideoHasCategory($response->json('id'), $secondRelations['categories'][0]);
-    //     $this->assertVideoHasGenre($response->json('id'), $secondRelations['genres'][0]);
-    //     $this->assertDatabaseMissing(
-    //         'category_video',
-    //         [
-    //             'video_id' => $response->json('id'),
-    //             'category_id' => $firstRelations['categories'][0]
-    //         ]
-    //     );
-    //     $this->assertDatabaseMissing(
-    //         'genre_video',
-    //         [
-    //             'video_id' => $response->json('id'),
-    //             'genre_id' => $firstRelations['genres'][0]
-    //         ]
-    //     );
-    // }
+        try {
+            $video->update(
+                $this->getFakeData() +
+                    ['video' => $this->makeFile()]
+            );
+        } catch (TestException $th) {
+            $this->assertCount(0, Storage::allFiles());
+            $hasError = true;
+        }
 
+        $this->assertTrue($hasError);
+    }
 
-
-
-
-    // public function testRollbackInStoreWithFiles()
-    // {
-    //     Storage::fake();
-
-    //     Event::listen(TransactionCommitted::class, function () {
-    //         throw new TestException;
-    //     });
-
-    //     $hasError = false;
-
-    //     try {
-    //         Video::create(
-    //             $this->getFakeData() +
-    //                 $this->getFakeFiles() +
-    //                 $this->getFakeRelations()
-    //         );
-    //     } catch (TestException $th) {
-    //         $this->assertCount(0, Storage::allFiles());
-    //         $hasError = true;
-    //     }
-
-    //     $this->assertTrue($hasError);
-    // }
-
-    // public function testRollbackInUpdateWithFiles()
-    // {
-    //     Storage::fake();
-
-    //     $video = factory(Video::class)->create();
-
-    //     Event::listen(TransactionCommitted::class, function () {
-    //         throw new TestException;
-    //     });
-
-    //     $hasError = false;
-
-    //     try {
-    //         $video->update(
-    //             $this->getFakeData() +
-    //                 $this->getFakeFiles()
-    //         );
-    //     } catch (TestException $th) {
-    //         $this->assertCount(0, Storage::allFiles());
-    //         $hasError = true;
-    //     }
-
-    //     $this->assertTrue($hasError);
-    // }
     private function makeFile(
         string $name = 'file',
         string $extension = 'mp4',

@@ -13,7 +13,7 @@ class Video extends Model
 {
     use Uuid, Uploader, SoftDeletes;
 
-    const CLASSIFICATION = ['L', 10, 12, 14, 16, 18];
+    const CLASSIFICATION = ['L', '10', '12', '14', '16', '18'];
 
     const VIDEO_FILE_MAX_SIZE = 1024 * 5; // 5MB
     const BANNER_FILE_MAX_SIZE = 1024 * 10; // 10MB
@@ -52,8 +52,9 @@ class Video extends Model
      * @var array
      */
     protected $casts = [
+        'id' => 'string',
         'duration' => 'integer',
-        // 'classification' => 'string',
+        'classification' => 'string',
         'release_at' => 'date_format:Y-m-d'
     ];
 

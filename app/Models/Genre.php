@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Genre extends Model
 {
-    use Uuid,
-        SoftDeletes;
+    use Uuid, SoftDeletes;
 
     protected $keyType = 'string';
 
