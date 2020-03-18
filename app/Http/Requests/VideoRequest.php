@@ -47,6 +47,11 @@ class VideoRequest extends FormRequest
                 'array',
                 'exists:genres,id,is_active,1,deleted_at,NULL',
             ],
+            'cast_members' => [
+                'required',
+                'array',
+                'exists:cast_members,id,deleted_at,NULL',
+            ],
             'video' => 'file|mimetypes:video/mp4|max:' . Video::VIDEO_FILE_MAX_SIZE,
             'banner' => 'image|max:' . Video::BANNER_FILE_MAX_SIZE,
             'trailer' => 'file|mimetypes:video/mp4|max:' . Video::TRAILER_FILE_MAX_SIZE,

@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use App\Enums\Classification;
+use App\Filters\VideoFilter;
 use App\Traits\Uploader;
 use App\Traits\Uuid;
+use EloquentFilter\Filterable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
 class Video extends Model
 {
-    use Uuid, Uploader, SoftDeletes;
+    use Uuid, Uploader, Filterable, SoftDeletes;
 
     const CLASSIFICATION = ['L', '10', '12', '14', '16', '18'];
 
@@ -125,6 +127,11 @@ class Video extends Model
         }
     }
 
+    public function modelFilter()
+    {
+        return $this->provideFilter(VideoFilter::class);
+    }
+
     /**
      * Sincroniza os relacionamentos com o vídeo
      *
@@ -139,6 +146,9 @@ class Video extends Model
 
         if (isset($relations['genres']))
             $video->genres()->sync($relations['genres']);
+
+        if (isset($relations['cast_members']))
+            $video->castMembers()->sync($relations['cast_members']);
     }
 
     /**
@@ -211,6 +221,16 @@ class Video extends Model
     public function genres()
     {
         return $this->belongsToMany(Genre::class)->withTrashed();
+    }
+
+    /**
+     * Retorna todos os gêneros do vídeo, inclusive os excluídos
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function castMembers()
+    {
+        return $this->belongsToMany(CastMember::class)->withTrashed();
     }
 
     /**

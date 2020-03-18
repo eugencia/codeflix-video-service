@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\CastMember;
 use App\Models\Genre;
 use App\Models\Video;
 use Illuminate\Database\Eloquent\Model;
@@ -54,10 +55,8 @@ class VideoSeeder extends Seeder
 
     private function makeRelations()
     {
-        $genresId = [];
-        $categoriesId = [];
-
         $genres = Genre::inRandomOrder()->with('categories')->take(rand(1, 4))->get();
+        $castMembers = CastMember::inRandomOrder()->take(rand(3, 6))->get();
 
         foreach ($genres as $genre) {
 
@@ -72,6 +71,7 @@ class VideoSeeder extends Seeder
         return [
             'genres' => $genresId,
             'categories' => array_unique($categoriesId),
+            'cast_members' => $castMembers->pluck('id')->toArray(),
         ];
     }
 }

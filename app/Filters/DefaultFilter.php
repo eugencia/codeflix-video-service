@@ -25,7 +25,7 @@ abstract class DefaultFilter extends ModelFilter
     public function sort(string $column)
     {
         if ($this->isSortable($column)) {
-
+            // dd($column);
             $direction = strtolower($this->input('dir')) === 'asc' ? 'asc' : 'desc';
 
             $this->orderBy($column, $direction);
