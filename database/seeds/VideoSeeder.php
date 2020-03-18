@@ -4,6 +4,7 @@ use App\Models\Genre;
 use App\Models\Video;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,6 +17,9 @@ class VideoSeeder extends Seeder
      */
     public function run()
     {
+        $directory = Storage::getDriver()->getAdapter()->getPathPrefix();
+        File::deleteDirectory($directory);
+
         $this->removeDirectory();
 
         Model::reguard();
@@ -24,9 +28,14 @@ class VideoSeeder extends Seeder
             ->each(function ($video) {
 
                 Video::create(
-
                     array_merge(
                         $video->toArray(),
+                        [
+                            'video' => $this->makeFile('video', 'video/mp4'),
+                            'banner' => $this->makeFile('banner', 'image/jpeg'),
+                            'trailer' => $this->makeFile('trailer', 'video/mp4'),
+                            'thumbnail' => $this->makeFile('thumbnail', 'image/jpeg'),
+                        ],
                         $this->makeRelations()
                     )
 
@@ -41,6 +50,11 @@ class VideoSeeder extends Seeder
         $directory = Storage::getDriver()->getAdapter()->getPathPrefix();
 
         File::deleteDirectory($directory);
+    }
+
+    private function makeFile($name, $mimeType, $size = 0)
+    {
+        return UploadedFile::fake()->create($name, $size, $mimeType);
     }
 
     private function makeRelations()
