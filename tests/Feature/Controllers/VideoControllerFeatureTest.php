@@ -214,68 +214,61 @@ class VideoControllerFeatureTest extends TestCase
         Storage::fake();
 
         $fakeData = $this->getFakeData();
-
         $fakeFiles = [
             'video' => $this->makeFile('test', 'mp4'),
-            'bannher' => $this->makeFile('bannher', 'jpg'),
+            'banner' => $this->makeFile('banner', 'jpg'),
             'trailer' => $this->makeFile('trailer', 'mp4'),
             'thumbnail' => $this->makeFile('thumbnail', 'jpg'),
         ];
-
         $fakeRelations = $this->getFakeRelations();
 
         $data = $fakeData + $fakeFiles + $fakeRelations;
 
-        $test = Arr::except($data, ['categories', 'genres'] + array_keys($fakeFiles)) + ['deleted_at' => null];
+        $test = Arr::except($data, array_merge(['categories', 'genres'], array_keys($fakeFiles)) + ['deleted_at' => null]);
+        $response = $this->assertFieldsOnCreate($data, $test, $test);
 
-        $response = $this->json("POST", $this->routeStore(), $data);
-
-        dd($response->content(), $test);
-
-        $response = $this->assertFieldsOnCreate($data, $test);
-
-        $response->assertCreated();
-
-        // $this->assertFilesExists(Video::find($response->json('id')), $fakeFiles);
+        $this->assertFilesExists(Video::find($response->json('data.id')), $fakeFiles);
     }
 
-    // public function testUpdateWithFiles()
-    // {
-    //     Storage::fake();
+    public function testUpdateWithFiles()
+    {
+        Storage::fake();
 
-    //     $fakeData = $this->getFakeData();
-    //     $fakeFiles = $this->getFakeFiles();
-    //     $fakeRelations = $this->getFakeRelations();
+        $fakeData = $this->getFakeData();
+        $fakeFiles = [
+            'video' => $this->makeFile('test', 'mp4'),
+            'banner' => $this->makeFile('banner', 'jpg'),
+            'trailer' => $this->makeFile('trailer', 'mp4'),
+            'thumbnail' => $this->makeFile('thumbnail', 'jpg'),
+        ];
+        $fakeRelations = $this->getFakeRelations();
 
-    //     $data = $fakeData + $fakeFiles + $fakeRelations;
+        $data = $fakeData + $fakeFiles + $fakeRelations;
+        $test = Arr::except($data, array_merge(['categories', 'genres'], array_keys($fakeFiles)) + ['deleted_at' => null]);
+        $response = $this->assertFieldsOnCreate($data, $test, $test);
 
-    //     $response = $this->json("PUT", $this->routeUpdate(), $data);
+        $this->assertFilesExists(Video::find($response->json('data.id')), $fakeFiles);
 
-    //     $response->assertOk();
+        $data = $fakeData + $fakeRelations + ['video' => $this->makeFile('test', 'mp4')];
+        $test = Arr::except($data, array_merge(['categories', 'genres'], array_keys($fakeFiles)) + ['deleted_at' => null]);
+        
+        $this->assertFieldsOnUpdate($data, $test, $test);
 
-    //     $this->assertFilesExists(Video::find($response->json('id')), $fakeFiles);
+        // //Existência dos arquivos antigos
+        $this->assertFilesExists(Video::find($response->json('data.id')), [
+            $fakeFiles['trailer'],
+            $fakeFiles['thumbnail'],
+            $fakeFiles['banner'],
+        ]);
 
-    //     $newData = $fakeData + $fakeRelations + ['video' => $this->getFakeFiles()['video']];
+        //     //Exclusão do atualizado
+        // $this->assertFilesNotExists(Video::find($response->json('data.id')), $fakeFiles['video']);
 
-    //     $response = $this->json("PUT", $this->routeUpdate(), $newData);
-
-    //     $response->assertOk();
-
-    //     //Existência dos arquivos antigos
-    //     $this->assertFilesExists(Video::find($response->json('id')), [
-    //         $fakeFiles['trailer'],
-    //         $fakeFiles['thumbnail'],
-    //         $fakeFiles['banner'],
-    //     ]);
-
-    //     //Exclusão do atualizado
-    //     $this->assertFilesNotExists(Video::find($response->json('id')), $fakeFiles['video']);
-
-    //     //Existência do novo arquivo
-    //     $this->assertFilesExists(Video::find($response->json('id')), [
-    //         $newData['video'],
-    //     ]);
-    // }
+        //     //Existência do novo arquivo
+        //     $this->assertFilesExists(Video::find($response->json('id')), [
+        //         $newData['video'],
+        //     ]);
+    }
 
 
     // public function testSyncRelations()

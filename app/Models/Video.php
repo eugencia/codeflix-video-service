@@ -52,7 +52,8 @@ class Video extends Model
      * @var array
      */
     protected $casts = [
-        'duration' => 'int',
+        'duration' => 'integer',
+        // 'classification' => 'string',
         'release_at' => 'date_format:Y-m-d'
     ];
 
