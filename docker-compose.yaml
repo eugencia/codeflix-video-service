@@ -18,7 +18,7 @@ services:
       - FILESYSTEM_DRIVER=videos
       - GOOGLE_CLOUD_PROJECT_ID=code-flix
       - GOOGLE_CLOUD_KEY_FILE=service-account-storage.json
-      - GOOGLE_CLOUD_STORAGE_BUCKET=video-flix
+      - GOOGLE_CLOUD_STORAGE_BUCKET=code-flix-videos
       - GOOGLE_CLOUD_STORAGE_PATH_PREFIX=
       - GOOGLE_CLOUD_STORAGE_API_URI=https://console.cloud.google.com/storage/browser/video-flix
     networks:
