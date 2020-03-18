@@ -7,7 +7,7 @@ use Faker\Generator as Faker;
 
 $factory->define(Genre::class, function (Faker $faker) {
     return [
-        'name' => $faker->colorName,
+        'name' => $faker->unique()->sentence(4),
         'is_active' => $faker->boolean
     ];
 });

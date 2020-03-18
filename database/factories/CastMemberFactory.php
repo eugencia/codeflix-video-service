@@ -12,7 +12,7 @@ $factory->define(CastMember::class, function (Faker $faker) {
     $arr = [CastMember::ACTOR, CastMember::DIRECTOR];
 
     return [
-        'name' => $faker->name,
+        'name' => $faker->unique()->name,
         'role' => $arr[array_rand($arr)]
     ];
 });

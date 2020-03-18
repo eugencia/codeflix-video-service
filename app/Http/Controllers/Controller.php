@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use EloquentFilter\Filterable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -11,6 +13,8 @@ use Illuminate\Routing\Controller as BaseController;
 abstract class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
+
+    protected $defaultPerPage = 10;
 
     protected abstract function model();
 
@@ -23,7 +27,21 @@ abstract class Controller extends BaseController
      */
     public function index(Request $request)
     {
-        return $this->resource()::collection($this->model()::paginate((int) $request->perPage));
+        $PerPage = (int) $request->get('per_page', $this->defaultPerPage);
+
+        $query = $this->modelQuery();
+
+        /**
+         * Aplica os filtros
+         */
+        if (in_array(Filterable::class, class_uses($this->model())))
+            $query = $query->filter($request->all());
+
+        $data = $request->has('all') || !$this->defaultPerPage
+            ? $query->get()
+            : $query->paginate($PerPage);
+
+        return $this->resource()::collection($data);
     }
 
     /**
@@ -40,7 +58,7 @@ abstract class Controller extends BaseController
 
     public function store(Request $request)
     {
-        $objectCreated = $this->model()::create($this->getDataValidated($request));
+        $objectCreated = $this->modelQuery()->create($this->getDataValidated($request));
 
         $objectCreated->refresh();
 
@@ -83,8 +101,7 @@ abstract class Controller extends BaseController
 
         $keyName = (new $model)->getKeyName();
 
-        return $this->model()::where($keyName, $value)
-                    ->firstOrFail();
+        return $this->modelQuery()->where($keyName, $value)->firstOrFail();
     }
 
     private function getDataValidated(Request $request)
@@ -94,5 +111,10 @@ abstract class Controller extends BaseController
         $formRequest = new $class;
 
         return $this->validate($request, $formRequest->rules());
+    }
+
+    private function modelQuery(): Builder
+    {
+        return $this->model()::query();
     }
 }
