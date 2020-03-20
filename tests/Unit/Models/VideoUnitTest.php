@@ -5,6 +5,7 @@ namespace Tests\Unit\Models;
 use App\Models\Video;
 use App\Traits\Uploader;
 use App\Traits\Uuid;
+use EloquentFilter\Filterable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Tests\TestCase;
 use Tests\Utils\Traits\AssertTraits;
@@ -18,6 +19,7 @@ class VideoUnitTest extends TestCase
         $traits = [
             Uuid::class,
             Uploader::class,
+            Filterable::class,
             SoftDeletes::class,
         ];
 

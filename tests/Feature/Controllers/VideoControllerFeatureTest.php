@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Http;
 
+use App\Models\CastMember;
 use App\Models\Category;
 use App\Models\Genre;
 use App\Models\Video;
@@ -50,7 +51,8 @@ class VideoControllerFeatureTest extends TestCase
             'duration' => '',
             'classification' => '',
             'categories' => '',
-            'genres' => ''
+            'genres' => '',
+            'cast_members' => ''
         ];
 
         $this->assertFieldsValidationInCreating($data, 'required');
@@ -148,19 +150,19 @@ class VideoControllerFeatureTest extends TestCase
     public function testInvalidateExistsFields()
     {
         /**
-         * Gêneros e categorias não existem no banco
+         * Gêneros, Membro do elenco e categorias não existem no banco
          */
-        $this->assertFieldsValidationInCreating(['categories' => [1], 'genres' => [1]], 'exists');
-        $this->assertFieldsValidationInUpdating(['categories' => [1], 'genres' => [1]], 'exists');
+        $this->assertFieldsValidationInCreating(['categories' => [1], 'genres' => [1], 'cast_members' => [1]], 'exists');
+        $this->assertFieldsValidationInUpdating(['categories' => [1], 'genres' => [1], 'cast_members' => [1]], 'exists');
 
         /**
-         * Gêneros e categorias inativas
+         * Gêneros, categorias inativas
          */
-        $this->assertFieldsValidationInCreating($this->getFakeRelations(false, false, false), 'exists');
-        $this->assertFieldsValidationInUpdating($this->getFakeRelations(false, false, false), 'exists');
+        $this->assertFieldsValidationInCreating(Arr::except($this->getFakeRelations(false, false, false), ['cast_members']), 'exists');
+        $this->assertFieldsValidationInUpdating(Arr::except($this->getFakeRelations(false, false, false), ['cast_members']), 'exists');
 
         /**
-         * Gêneros e categorias excluídas
+         * Gêneros, Membro do elenco e categorias excluídas
          */
         $this->assertFieldsValidationInCreating($this->getFakeRelations(true, true, false), 'exists');
         $this->assertFieldsValidationInUpdating($this->getFakeRelations(true, true, false), 'exists');
@@ -175,7 +177,7 @@ class VideoControllerFeatureTest extends TestCase
 
         $response->assertOk()
             ->assertJson([
-                'meta' => ['per_page' => 15]
+                'meta' => []
             ])
             ->assertJsonStructure([
                 'data' => [
@@ -193,7 +195,7 @@ class VideoControllerFeatureTest extends TestCase
         $data = [
             [
                 'data' => $dataFake,
-                'test' => Arr::except($dataFake, ['categories', 'genres']) + ['deleted_at' => null]
+                'test' => Arr::except($dataFake, ['categories', 'genres', 'cast_members']) + ['deleted_at' => null]
             ]
         ];
 
@@ -345,9 +347,16 @@ class VideoControllerFeatureTest extends TestCase
                 'category_id' => $firstRelations['categories'][0]
             ]
         );
+        $this->assertDatabaseHas(
+            'category_video',
+            [
+                'video_id' => $response->json('data.id'),
+                'category_id' => $firstRelations['categories'][0]
+            ]
+        );
 
         /**
-         * Atualiza as categorias e gêneros
+         * Atualiza os relacionamentos
          */
         $response = $this->json(
             "PUT",
@@ -368,13 +377,13 @@ class VideoControllerFeatureTest extends TestCase
                 'category_id' => $secondRelations['categories'][0]
             ]
         );
-        $this->assertDatabaseMissing(
-            'category_video',
-            [
-                'video_id' => $response->json('data.id'),
-                'category_id' => $firstRelations['categories'][0]
-            ]
-        );
+        // $this->assertDatabaseMissing(
+        //     'cast_member_video',
+        //     [
+        //         'video_id' => $response->json('data.id'),
+        //         'cast_member_id' => $firstRelations['cast_members'][0]
+        //     ]
+        // );
         $this->assertDatabaseMissing(
             'genre_video',
             [
@@ -395,11 +404,9 @@ class VideoControllerFeatureTest extends TestCase
         $hasError = false;
 
         try {
-            Video::create(
-                $this->getFakeData() +
-                    ['video' => $this->makeFile()] +
-                    $this->getFakeRelations()
-            );
+
+            $data = $this->getFakeData() + ['video' => $this->makeFile()] + $this->getFakeRelations();
+            Video::create($data);
         } catch (TestException $th) {
             $this->assertCount(0, Storage::allFiles());
             $hasError = true;
@@ -458,10 +465,12 @@ class VideoControllerFeatureTest extends TestCase
     {
         $genre = factory(Genre::class)->create(['is_active' => $isActive]);
         $category = factory(Category::class)->create(['is_active' => $isActive]);
+        $castMember = factory(CastMember::class)->create();
 
         if ($deleted) {
             $genre->delete();
             $category->delete();
+            $castMember->delete();
         }
 
         if ($sync)
@@ -470,6 +479,7 @@ class VideoControllerFeatureTest extends TestCase
         return [
             'genres' => [$genre->id],
             'categories' => [$category->id],
+            'cast_members' => [$castMember->id]
         ];
     }
 

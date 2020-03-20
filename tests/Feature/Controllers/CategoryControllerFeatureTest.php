@@ -45,7 +45,7 @@ class CategoryControllerFeatureTest extends TestCase
 
         $response->assertOk()
             ->assertJson([
-                'meta' => ['per_page' => 15]
+                'meta' => []
             ])
             ->assertJsonStructure([
                 'data' => [

@@ -2,8 +2,6 @@
 
 /** @var \Illuminate\Database\Eloquent\Factory $factory */
 
-use App\Enums\CastMemberType;
-use App\Enums\Role;
 use App\Models\CastMember;
 use Faker\Generator as Faker;
 
