@@ -152,8 +152,7 @@ class GenreControllerFeatureTest extends TestCase
     {
         $categories = factory(Category::class, 3)
             ->create(['is_active' => true])
-            ->pluck('id')
-            ->toArray();
+            ->modelKeys();
 
         /**
          * Primeiro criar um gênero com alguma categoria
