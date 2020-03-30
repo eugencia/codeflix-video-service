@@ -15,7 +15,7 @@ class GenreSeeder extends Seeder
     {
 
 
-        factory(Genre::class, 15)
+        factory(Genre::class, 25)
             ->create()
             ->each(function ($genre) {
 

@@ -22,7 +22,7 @@ class VideoSeeder extends Seeder
 
         Model::reguard();
 
-        factory(Video::class, 4)->make()
+        factory(Video::class, 40)->make()
             ->each(function ($video) {
 
                 Video::create(
@@ -71,7 +71,7 @@ class VideoSeeder extends Seeder
         return [
             'genres' => $genresId,
             'categories' => array_unique($categoriesId),
-            'cast_members' => $castMembers->pluck('id')->toArray(),
+            'cast_members' => $castMembers->modelKeys(),
         ];
     }
 }
