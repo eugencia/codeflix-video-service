@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Models;
+namespace Test\Feature\Traits;
 
 use Tests\Stubs\Models\VideoStub;
 use Tests\TestCase;

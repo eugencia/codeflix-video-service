@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Http;
+namespace Tests\Feature\Controllers;
 
 use App\Http\Controllers\GenreController;
 use App\Models\Category;

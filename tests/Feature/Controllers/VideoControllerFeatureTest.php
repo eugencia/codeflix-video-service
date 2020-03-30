@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Http;
+namespace Tests\Feature\Controllers;
 
 use App\Models\CastMember;
 use App\Models\Category;
