@@ -14,8 +14,6 @@ abstract class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-    protected $defaultPerPage = 10;
-
     protected abstract function model();
 
     protected abstract function request();
@@ -27,17 +25,19 @@ abstract class Controller extends BaseController
      */
     public function index(Request $request)
     {
-        $PerPage = (int) $request->get('per_page', $this->defaultPerPage);
+        $model = $this->model();
+
+        $PerPage = (int) $request->get('per_page', (new $model)->getPerPage());
 
         $query = $this->modelQuery();
 
         /**
          * Aplica os filtros
          */
-        if (in_array(Filterable::class, class_uses($this->model())))
+        if (in_array(Filterable::class, class_uses($model)))
             $query = $query->filter($request->all());
 
-        $data = $request->has('all') || !$this->defaultPerPage
+        $data = $request->has('all')
             ? $query->get()
             : $query->paginate($PerPage);
 
