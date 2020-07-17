@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Pivot\CategoryGenre;
 use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -28,6 +29,7 @@ class Genre extends Model
 
     public function categories()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsToMany(Category::class)
+            ->using(CategoryGenre::class);
     }
 }

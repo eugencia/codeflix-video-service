@@ -4,6 +4,9 @@ namespace App\Models;
 
 use App\Enums\Classification;
 use App\Filters\VideoFilter;
+use App\Models\Pivot\CastMemberVideo;
+use App\Models\Pivot\CategoryVideo;
+use App\Models\Pivot\GenreVideo;
 use App\Traits\Uploader;
 use App\Traits\Uuid;
 use EloquentFilter\Filterable;
@@ -212,7 +215,9 @@ class Video extends Model
      */
     public function categories()
     {
-        return $this->belongsToMany(Category::class)->withTrashed();
+        return $this->belongsToMany(Category::class)
+            ->using(CategoryVideo::class)
+            ->withTrashed();
     }
 
     /**
@@ -222,7 +227,9 @@ class Video extends Model
      */
     public function genres()
     {
-        return $this->belongsToMany(Genre::class)->withTrashed();
+        return $this->belongsToMany(Genre::class)
+            ->using(GenreVideo::class)
+            ->withTrashed();
     }
 
     /**
@@ -232,7 +239,9 @@ class Video extends Model
      */
     public function castMembers()
     {
-        return $this->belongsToMany(CastMember::class)->withTrashed();
+        return $this->belongsToMany(CastMember::class)
+            ->using(CastMemberVideo::class)
+            ->withTrashed();
     }
 
     /**
