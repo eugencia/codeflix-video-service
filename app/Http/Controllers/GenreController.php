@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\GenreRequest;
 use App\Http\Resources\GenreResource;
 use App\Models\Genre;
+// use EloquentFilter\Filterable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +25,23 @@ class GenreController extends Controller
     {
         return GenreResource::class;
     }
+
+    // public function index(Request $request)
+    // {
+    //     $query = Genre::query();
+
+    //     /**
+    //      * Aplica os filtros
+    //      */
+    //     if (in_array(Filterable::class, class_uses(Genre::class)))
+    //         $query = $query->filter($request->all());
+
+    //     $data = $request->has('all')
+    //         ? $query->get()
+    //         : $query->paginate($request->get('per_page'));
+
+    //     return GenreResource::collection($data);
+    // }
 
     /**
      * Store a newly created resource in storage.

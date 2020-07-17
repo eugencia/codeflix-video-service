@@ -14,6 +14,8 @@ class Genre extends Model
 
     public $incrementing = false;
 
+    protected $perPage = 10;
+
     protected $fillable = [
         'name',
         'is_active',

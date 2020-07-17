@@ -25,6 +25,8 @@ class Video extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
+    protected $perPage = 10;
+
     /**
      * @var array
      */
