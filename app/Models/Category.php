@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Filters\CategoryFilter;
+use App\Models\Pivot\CategoryGenre;
 use App\Traits\Uuid;
 use EloquentFilter\Filterable;
 use Illuminate\Database\Eloquent\Model;
@@ -36,6 +37,7 @@ class Category extends Model
 
     public function genres()
     {
-        return $this->belongsToMany(Genre::class);
+        return $this->belongsToMany(Genre::class)
+            ->using(CategoryGenre::class);
     }
 }
