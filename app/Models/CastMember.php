@@ -16,7 +16,10 @@ class CastMember extends Model
     const DIRECTOR = 2;
 
     protected $keyType = 'string';
+
     public $incrementing = false;
+
+    protected $perPage = 10;
 
     protected $fillable = [
         'name',
