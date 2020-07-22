@@ -21,10 +21,16 @@ services:
       - GOOGLE_CLOUD_STORAGE_BUCKET=code-flix-videos
       - GOOGLE_CLOUD_STORAGE_PATH_PREFIX=
       - GOOGLE_CLOUD_STORAGE_API_URI=https://console.cloud.google.com/storage/browser/video-flix
+      - RABBITMQ_HOST=codeflix-mensageria-app
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASS=admin
     networks:
       - codeflix
+      - mensageria-service_codeflix
     depends_on:
       - codeflix-video-mysql
+
   codeflix-video-nginx:
     build: .docker/nginx
     container_name: codeflix-video-nginx
@@ -40,6 +46,7 @@ services:
       - .:/var/www
     networks:
       - codeflix
+      - mensageria-service_codeflix
     depends_on:
       - codeflix-video-app
 
@@ -63,3 +70,5 @@ services:
 networks:
   codeflix:
     driver: bridge
+  mensageria-service_codeflix:
+    external: true
