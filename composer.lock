@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f8bcc307053a8c5a370e44a57b75d094",
+    "content-hash": "8d681a66fa56f433ac37e384b11e9dba",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -5100,6 +5100,65 @@
                 "search"
             ],
             "time": "2020-03-03T22:30:29+00:00"
+        },
+        {
+            "name": "vladimir-yuldashev/laravel-queue-rabbitmq",
+            "version": "v10.2.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/vyuldashev/laravel-queue-rabbitmq.git",
+                "reference": "0ce0f95802184d30e6f3209cb0595733c3e3b88c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/vyuldashev/laravel-queue-rabbitmq/zipball/0ce0f95802184d30e6f3209cb0595733c3e3b88c",
+                "reference": "0ce0f95802184d30e6f3209cb0595733c3e3b88c",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "illuminate/queue": "^6.0|^7.0",
+                "php": "^7.2",
+                "php-amqplib/php-amqplib": "^2.11"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.16",
+                "laravel/horizon": "^3.0",
+                "mockery/mockery": "^1.0",
+                "orchestra/testbench": "^4.3",
+                "phpunit/phpunit": "^8.4"
+            },
+            "suggest": {
+                "ext-pcntl": "Required to use all features of the queue consumer."
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "10.0-dev"
+                },
+                "laravel": {
+                    "providers": [
+                        "VladimirYuldashev\\LaravelQueueRabbitMQ\\LaravelQueueRabbitMQServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "VladimirYuldashev\\LaravelQueueRabbitMQ\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Vladimir Yuldashev",
+                    "email": "misterio92@gmail.com"
+                }
+            ],
+            "description": "RabbitMQ driver for Laravel Queue. Supports Laravel Horizon.",
+            "time": "2020-07-17T22:05:17+00:00"
         },
         {
             "name": "vlucas/phpdotenv",

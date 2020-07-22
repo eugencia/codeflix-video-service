@@ -20,7 +20,7 @@ return [
 
         'production' => [
             'host'                  => env('RABBITMQ_HOST'),
-            'port'                  => env('RABBITMQ_POST'),
+            'port'                  => env('RABBITMQ_PORT'),
             'username'              => env('RABBITMQ_USER'),
             'password'              => env('RABBITMQ_PASS'),
             'vhost'                 => '/',
