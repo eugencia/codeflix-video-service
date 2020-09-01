@@ -10,7 +10,7 @@ use App\Models\Pivot\CategoryGenre;
 use App\Models\Pivot\CategoryVideo;
 use App\Models\Pivot\GenreVideo;
 use App\Models\Video;
-use App\Observers\ModelObserver;
+use App\Observers\Observer;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,14 +32,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        Genre::observe(ModelObserver::class);
-        Video::observe(ModelObserver::class);
-        Category::observe(ModelObserver::class);
-        CastMember::observe(ModelObserver::class);
+        Genre::observe(Observer::class);
+        Video::observe(Observer::class);
+        Category::observe(Observer::class);
+        CastMember::observe(Observer::class);
 
-        GenreVideo::observe(ModelObserver::class);
-        CategoryGenre::observe(ModelObserver::class);
-        CategoryVideo::observe(ModelObserver::class);
-        CastMemberVideo::observe(ModelObserver::class);
+        GenreVideo::observe(Observer::class);
+        CategoryGenre::observe(Observer::class);
+        CategoryVideo::observe(Observer::class);
+        CastMemberVideo::observe(Observer::class);
     }
 }
