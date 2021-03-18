@@ -27,7 +27,7 @@ services:
       - RABBITMQ_PASS=admin
     networks:
       - codeflix
-      - mensageria-service_codeflix
+      - rabbitmq_codeflix
     depends_on:
       - codeflix-video-mysql
 
@@ -46,7 +46,7 @@ services:
       - .:/var/www
     networks:
       - codeflix
-      - mensageria-service_codeflix
+      - rabbitmq_codeflix
     depends_on:
       - codeflix-video-app
 
@@ -70,5 +70,5 @@ services:
 networks:
   codeflix:
     driver: bridge
-  mensageria-service_codeflix:
+  rabbitmq_codeflix:
     external: true
